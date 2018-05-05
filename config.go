@@ -1,13 +1,18 @@
 package main
 
 type globalConfig struct {
-	Server serverConfig
+	Server   serverConfig
+	Database databaseConfig
 }
 
 type serverConfig struct {
 	Tls      bool   `toml:"tls"`
 	Port     int    `toml:"port"`
-	Host     string `toml:"localhost:8080"`
+	Host     string `toml:"host"`
 	CertFile string `toml:"cert_file"`
 	KeyFile  string `toml:"key_file"`
+}
+
+type databaseConfig struct {
+	MetaDB string `toml:"meta_db"`
 }

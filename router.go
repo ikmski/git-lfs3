@@ -2,9 +2,20 @@ package main
 
 import "github.com/gin-gonic/gin"
 
-func newEngine() *gin.Engine {
+type App struct {
+	router    *gin.Engine
+	metaStore *MetaStore
+}
 
-	engine := gin.Default()
+func newApp(meta *MetaStore) *App {
 
-	return engine
+	app := &App{metaStore: meta}
+
+	r := gin.Default()
+
+	r.POST("/{user}/{repo}/objects/batch", app.batchHandler)
+
+	app.router = r
+
+	return app
 }

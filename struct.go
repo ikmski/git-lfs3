@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type RequestVars struct {
+type Object struct {
 	Oid      string
 	Size     int64
 	User     string
@@ -13,10 +13,10 @@ type RequestVars struct {
 	Repo     string
 }
 
-type BatchVars struct {
-	Transfers []string       `json:"transfers,omitempty"`
-	Operation string         `json:"operation"`
-	Objects   []*RequestVars `json:"objects"`
+type BatchRequest struct {
+	Transfers []string  `json:"transfers,omitempty"`
+	Operation string    `json:"operation"`
+	Objects   []*Object `json:"objects"`
 }
 
 type MetaObject struct {
@@ -89,17 +89,17 @@ type VerifiableLockList struct {
 	Message    string `json:"message,omitempty"`
 }
 
-func (v *RequestVars) DownloadLink() string {
+func (v *Object) DownloadLink() string {
 
 	return v.internalLink("objects")
 }
 
-func (v *RequestVars) UploadLink(useTus bool) string {
+func (v *Object) UploadLink() string {
 
 	return v.internalLink("objects")
 }
 
-func (v *RequestVars) internalLink(subpath string) string {
+func (v *Object) internalLink(subpath string) string {
 
 	path := ""
 
@@ -120,7 +120,7 @@ func (v *RequestVars) internalLink(subpath string) string {
 	return fmt.Sprintf("http://%s%s", config.Server.Host, path)
 }
 
-func (v *RequestVars) VerifyLink() string {
+func (v *Object) VerifyLink() string {
 
 	path := fmt.Sprintf("/verify/%s", v.Oid)
 

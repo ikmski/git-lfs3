@@ -10,7 +10,9 @@ import (
 var config globalConfig
 
 const (
-	configFileName = "config.toml"
+	configFileName   = "config.toml"
+	contentMediaType = "application/vnd.git-lfs"
+	metaMediaType    = contentMediaType + "+json"
 )
 
 func main() {
@@ -20,14 +22,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	e := newEngine()
+	metaStore, err := NewMetaStore(config.Database.MetaDB)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	app := newApp(metaStore)
 
 	if config.Server.Tls {
-		e.RunTLS(
+		app.router.RunTLS(
 			fmt.Sprintf(":%d", config.Server.Port),
 			config.Server.CertFile,
 			config.Server.KeyFile)
 	} else {
-		e.Run(fmt.Sprintf(":%d", config.Server.Port))
+		app.router.Run(fmt.Sprintf(":%d", config.Server.Port))
 	}
 }
