@@ -59,12 +59,12 @@ func TestMain(m *testing.M) {
 		}
 	*/
 
-	//app := NewApp(testContentStore, testMetaStore)
-	//lfsServer = httptest.NewServer(app)
+	app := newApp(testMetaStore)
+	lfsServer = httptest.NewServer(app)
 
 	ret := m.Run()
 
-	//lfsServer.Close()
+	lfsServer.Close()
 	testMetaStore.Close()
 
 	os.Remove("lfs-test.db")

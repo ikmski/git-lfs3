@@ -1,6 +1,11 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 type App struct {
 	router    *gin.Engine
@@ -18,4 +23,21 @@ func newApp(meta *MetaStore) *App {
 	app.router = r
 
 	return app
+}
+
+func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	a.router.ServeHTTP(w, r)
+}
+
+func (a *App) Serve() error {
+
+	if config.Server.Tls {
+		return a.router.RunTLS(
+			fmt.Sprintf(":%d", config.Server.Port),
+			config.Server.CertFile,
+			config.Server.KeyFile)
+	} else {
+		return a.router.Run(fmt.Sprintf(":%d", config.Server.Port))
+	}
 }

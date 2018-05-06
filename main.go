@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/BurntSushi/toml"
@@ -29,12 +28,5 @@ func main() {
 
 	app := newApp(metaStore)
 
-	if config.Server.Tls {
-		app.router.RunTLS(
-			fmt.Sprintf(":%d", config.Server.Port),
-			config.Server.CertFile,
-			config.Server.KeyFile)
-	} else {
-		app.router.Run(fmt.Sprintf(":%d", config.Server.Port))
-	}
+	app.Serve()
 }
