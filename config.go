@@ -16,3 +16,10 @@ type serverConfig struct {
 type databaseConfig struct {
 	MetaDB string `toml:"meta_db"`
 }
+
+type s3Config struct {
+	AwsAccessKeyID     string `toml:"aws_access_key_id"`
+	AwsSecretAccessKey string `toml:"aws_secret_access_key"`
+	Region             string `toml:"region"`
+	Bucket             string `toml:"bucket"`
+}

@@ -1,0 +1,215 @@
+package main
+
+import (
+	"bytes"
+	"errors"
+	"io"
+	"io/ioutil"
+	"os"
+	"testing"
+
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
+)
+
+var contentStore *ContentStore
+
+type MockedS3 struct {
+	s3iface.S3API
+	getResult  s3.GetObjectOutput
+	headResult s3.HeadObjectOutput
+	err        error
+}
+
+type MockedDownloader struct {
+	s3manageriface.DownloaderAPI
+	content *bytes.Buffer
+	err     error
+}
+
+type MockedUploader struct {
+	s3manageriface.UploaderAPI
+	output s3manager.UploadOutput
+	err    error
+}
+
+func (s MockedS3) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+	return &s.getResult, s.err
+}
+
+func (s MockedS3) HeadObject(input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+	return &s.headResult, s.err
+}
+
+func (d MockedDownloader) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (n int64, err error) {
+	w.WriteAt(d.content.Bytes(), 0)
+	return int64(d.content.Len()), d.err
+}
+
+func (u MockedUploader) Upload(input *s3manager.UploadInput, options ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
+	return &u.output, u.err
+}
+
+func TestContentStorePut(t *testing.T) {
+
+	var contentSize int64 = 12
+
+	contentStore = &ContentStore{
+		s3: MockedS3{
+			headResult: s3.HeadObjectOutput{
+				ContentLength: &contentSize,
+			},
+		},
+		downloader: MockedDownloader{},
+		uploader:   MockedUploader{},
+		bucket:     "test_bucket",
+	}
+
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: contentSize,
+	}
+
+	b := bytes.NewBuffer([]byte("test content"))
+
+	err := contentStore.Put(m, b)
+	if err != nil {
+		t.Fatalf("expected put to succeed, got: %s", err)
+	}
+}
+
+func TestContentStorePutHashMismatch(t *testing.T) {
+
+	var contentSize int64 = 12
+
+	contentStore = &ContentStore{
+		s3: MockedS3{
+			headResult: s3.HeadObjectOutput{
+				ContentLength: &contentSize,
+			},
+		},
+		downloader: MockedDownloader{},
+		uploader:   MockedUploader{},
+		bucket:     "test_bucket",
+	}
+
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: contentSize,
+	}
+
+	b := bytes.NewBuffer([]byte("bogus content"))
+
+	err := contentStore.Put(m, b)
+	if err == nil {
+		t.Fatal("expected put with bogus content to fail")
+	}
+}
+
+func TestContentStorePutSizeMismatch(t *testing.T) {
+
+	var contentSize int64 = 12
+
+	contentStore = &ContentStore{
+		s3: MockedS3{
+			headResult: s3.HeadObjectOutput{
+				ContentLength: &contentSize,
+			},
+		},
+		downloader: MockedDownloader{},
+		uploader:   MockedUploader{},
+		bucket:     "test_bucket",
+	}
+
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: 14,
+	}
+
+	b := bytes.NewBuffer([]byte("test content"))
+
+	err := contentStore.Put(m, b)
+	if err == nil {
+		t.Fatal("expected put with bogus size to fail")
+	}
+}
+
+func TestContentStoreGet(t *testing.T) {
+
+	b := bytes.NewBuffer([]byte("test content"))
+
+	contentStore = &ContentStore{
+		s3: MockedS3{},
+		downloader: MockedDownloader{
+			content: b,
+		},
+		uploader: MockedUploader{},
+		bucket:   "test_bucket",
+	}
+
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: 12,
+	}
+
+	fileName := "tmp_object"
+	f, err := os.Create(fileName)
+	if err != nil {
+		t.Fatalf("%s", err)
+		return
+	}
+	defer f.Close()
+	defer os.Remove(fileName)
+
+	_, err = contentStore.Get(m, f)
+	if err != nil {
+		t.Fatalf("expected get to succeed, got: %s", err)
+	}
+
+	by, _ := ioutil.ReadAll(f)
+	if string(by) != "test content" {
+		t.Fatalf("expected to read content, got: %s", string(by))
+	}
+}
+
+func TestContenStoreNotExists(t *testing.T) {
+
+	contentStore = &ContentStore{
+		s3: MockedS3{
+			err: errors.New("error"),
+		},
+		downloader: MockedDownloader{},
+		uploader:   MockedUploader{},
+		bucket:     "test_bucket",
+	}
+
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: 12,
+	}
+
+	if contentStore.Exists(m) {
+		t.Fatalf("expected to get an error, but content existed")
+	}
+}
+
+func TestContentStoreExists(t *testing.T) {
+
+	contentStore = &ContentStore{
+		s3:         MockedS3{},
+		downloader: MockedDownloader{},
+		uploader:   MockedUploader{},
+		bucket:     "test_bucket",
+	}
+
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: 12,
+	}
+
+	if !contentStore.Exists(m) {
+		t.Fatalf("expected content to exist")
+	}
+}
