@@ -49,11 +49,13 @@ func (d MockedDownloader) Download(w io.WriterAt, input *s3.GetObjectInput, opti
 }
 
 func (u MockedUploader) Upload(input *s3manager.UploadInput, options ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
+	ioutil.ReadAll(input.Body)
 	return &u.output, u.err
 }
 
 func TestContentStorePut(t *testing.T) {
 
+	b := bytes.NewBuffer([]byte("test content"))
 	var contentSize int64 = 12
 
 	contentStore = &ContentStore{
@@ -71,8 +73,6 @@ func TestContentStorePut(t *testing.T) {
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: contentSize,
 	}
-
-	b := bytes.NewBuffer([]byte("test content"))
 
 	err := contentStore.Put(m, b)
 	if err != nil {

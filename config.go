@@ -3,6 +3,7 @@ package main
 type globalConfig struct {
 	Server   serverConfig
 	Database databaseConfig
+	S3       s3Config
 }
 
 type serverConfig struct {

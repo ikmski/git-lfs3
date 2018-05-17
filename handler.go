@@ -18,8 +18,7 @@ func (a *App) batchHandler(c *gin.Context) {
 	for _, object := range br.Objects {
 
 		meta, err := a.metaStore.Get(object)
-		if err == nil {
-			//if err == nil && a.contentStore.Exists(meta) {
+		if err == nil && a.contentStore.Exists(meta) {
 			// Object is found and exists
 			responseObjects = append(responseObjects, a.Represent(object, meta, true, false))
 			continue

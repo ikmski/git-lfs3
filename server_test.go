@@ -1,16 +1,26 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	dockertest "gopkg.in/ory-am/dockertest.v3"
 )
 
 var (
-	lfsServer     *httptest.Server
-	testMetaStore *MetaStore
-	//testContentStore *ContentStore
+	lfsServer        *httptest.Server
+	testMetaStore    *MetaStore
+	testContentStore *ContentStore
 )
 
 const (
@@ -39,27 +49,39 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	/*
-		testContentStore, err = NewContentStore("lfs-content-test")
-		if err != nil {
-			fmt.Printf("Error creating content store: %s", err)
-			os.Exit(1)
-		}
-	*/
+	cleanup, addr := prepareS3Container()
+	defer cleanup()
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Credentials:      credentials.NewStaticCredentials("dummy", "dummy", ""),
+		S3ForcePathStyle: aws.Bool(true),
+		Region:           aws.String(endpoints.ApNortheast1RegionID),
+		Endpoint:         aws.String(addr),
+	}))
+
+	testContentStore, err = NewContentStore(sess, "lfs-test-bucket")
+	if err != nil {
+		fmt.Printf("Error creating content store: %s", err)
+		os.Exit(1)
+	}
+
+	err = createBucket("lfs-test-bucket")
+	if err != nil {
+		fmt.Printf("Error creating bucket: %s", err)
+		os.Exit(1)
+	}
+
+	if err := seedContentStore(); err != nil {
+		fmt.Printf("Error seeding content store: %s", err)
+		os.Exit(1)
+	}
 
 	if err := seedMetaStore(); err != nil {
 		fmt.Printf("Error seeding meta store: %s", err)
 		os.Exit(1)
 	}
 
-	/*
-		if err := seedContentStore(); err != nil {
-			fmt.Printf("Error seeding content store: %s", err)
-			os.Exit(1)
-		}
-	*/
-
-	app := newApp(testMetaStore)
+	app := newApp(testMetaStore, testContentStore)
 	lfsServer = httptest.NewServer(app)
 
 	ret := m.Run()
@@ -68,7 +90,6 @@ func TestMain(m *testing.M) {
 	testMetaStore.Close()
 
 	os.Remove("lfs-test.db")
-	//os.RemoveAll("lfs-content-test")
 
 	os.Exit(ret)
 }
@@ -82,8 +103,13 @@ func seedMetaStore() error {
 		return err
 	}
 
-	o := &Object{Oid: contentOid, Size: contentSize}
-	if _, err := testMetaStore.Put(o); err != nil {
+	o := &Object{
+		Oid:  contentOid,
+		Size: contentSize,
+	}
+
+	_, err := testMetaStore.Put(o)
+	if err != nil {
 		return err
 	}
 
@@ -95,15 +121,82 @@ func seedMetaStore() error {
 	return nil
 }
 
-/*
-func seedContentStore() error {
+func createBucket(bucket string) error {
 
-	meta := &MetaObject{Oid: contentOid, Size: contentSize}
-	buf := bytes.NewBuffer([]byte(content))
-	if err := testContentStore.Put(meta, buf); err != nil {
+	createInput := &s3.CreateBucketInput{
+		Bucket: aws.String(bucket),
+	}
+	_, err := testContentStore.s3.CreateBucket(createInput)
+	if err != nil {
+		aerr, ok := err.(awserr.Error)
+		if ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
 		return err
 	}
 
 	return nil
 }
-*/
+
+func seedContentStore() error {
+
+	meta := &MetaObject{
+		Oid:  contentOid,
+		Size: contentSize,
+	}
+
+	buf := bytes.NewBuffer([]byte(content))
+
+	err := testContentStore.Put(meta, buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func prepareS3Container() (func(), string) {
+
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		fmt.Printf("couldn't not connect docker host: %s", err.Error())
+		os.Exit(1)
+	}
+
+	resource, err := pool.Run("atlassianlabs/localstack", "latest", []string{})
+	if err != nil {
+		fmt.Printf("couldn't start S3 container: %s", err.Error())
+		os.Exit(1)
+	}
+
+	addr := fmt.Sprintf("http://localhost:%s", resource.GetPort("4572/tcp"))
+
+	cleanup := func() {
+		if err := pool.Purge(resource); err != nil {
+			fmt.Printf("couldn't cleanup S3 container: %s", err.Error())
+			os.Exit(1)
+		}
+	}
+
+	err = pool.Retry(func() error {
+		resp, err := http.Get(addr)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("didn't return status code 200: %s", resp.Status)
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Printf("couldn't prepare S3 container: %s", err.Error())
+		os.Exit(1)
+	}
+
+	return cleanup, addr
+}

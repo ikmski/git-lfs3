@@ -8,13 +8,17 @@ import (
 )
 
 type App struct {
-	router    *gin.Engine
-	metaStore *MetaStore
+	router       *gin.Engine
+	metaStore    *MetaStore
+	contentStore *ContentStore
 }
 
-func newApp(meta *MetaStore) *App {
+func newApp(meta *MetaStore, content *ContentStore) *App {
 
-	app := &App{metaStore: meta}
+	app := &App{
+		metaStore:    meta,
+		contentStore: content,
+	}
 
 	r := gin.Default()
 

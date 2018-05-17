@@ -10,7 +10,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -30,19 +29,14 @@ type ContentStore struct {
 	bucket     string
 }
 
-func NewContentStore(credentials *credentials.Credentials, region string, bucket string) (*ContentStore, error) {
+func NewContentStore(sess *session.Session, bucket string) (*ContentStore, error) {
 
-	c := new(ContentStore)
-
-	sess := session.Must(session.NewSession(&aws.Config{
-		Credentials: credentials,
-		Region:      aws.String(region),
-	}))
-
-	c.s3 = s3.New(sess)
-	c.downloader = s3manager.NewDownloader(sess)
-	c.uploader = s3manager.NewUploader(sess)
-	c.bucket = bucket
+	c := &ContentStore{
+		s3:         s3.New(sess),
+		downloader: s3manager.NewDownloader(sess),
+		uploader:   s3manager.NewUploader(sess),
+		bucket:     bucket,
+	}
 
 	return c, nil
 }
@@ -59,10 +53,13 @@ func (s *ContentStore) Get(meta *MetaObject, w io.WriterAt) (int64, error) {
 
 func (s *ContentStore) Put(meta *MetaObject, r io.Reader) error {
 
+	hash := sha256.New()
+	tee := io.TeeReader(r, hash)
+
 	uploadInput := &s3manager.UploadInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(transformKey(meta.Oid)),
-		Body:   r,
+		Body:   tee,
 	}
 
 	_, err := s.uploader.Upload(uploadInput)
@@ -77,18 +74,6 @@ func (s *ContentStore) Put(meta *MetaObject, r io.Reader) error {
 			fmt.Println(err.Error())
 		}
 		return err
-	}
-
-	hash := sha256.New()
-	_, err = io.Copy(hash, r)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
-
-	shaStr := hex.EncodeToString(hash.Sum(nil))
-	if shaStr != meta.Oid {
-		return errHashMismatch
 	}
 
 	headInput := &s3.HeadObjectInput{
@@ -112,6 +97,11 @@ func (s *ContentStore) Put(meta *MetaObject, r io.Reader) error {
 
 	if *result.ContentLength != meta.Size {
 		return errSizeMismatch
+	}
+
+	shaStr := hex.EncodeToString(hash.Sum(nil))
+	if shaStr != meta.Oid {
+		return errHashMismatch
 	}
 
 	return nil
