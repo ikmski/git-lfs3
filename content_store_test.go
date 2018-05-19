@@ -16,39 +16,39 @@ import (
 
 var contentStore *ContentStore
 
-type MockedS3 struct {
+type TestS3 struct {
 	s3iface.S3API
 	getResult  s3.GetObjectOutput
 	headResult s3.HeadObjectOutput
 	err        error
 }
 
-type MockedDownloader struct {
+type TestDownloader struct {
 	s3manageriface.DownloaderAPI
 	content *bytes.Buffer
 	err     error
 }
 
-type MockedUploader struct {
+type TestUploader struct {
 	s3manageriface.UploaderAPI
 	output s3manager.UploadOutput
 	err    error
 }
 
-func (s MockedS3) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+func (s TestS3) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 	return &s.getResult, s.err
 }
 
-func (s MockedS3) HeadObject(input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+func (s TestS3) HeadObject(input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
 	return &s.headResult, s.err
 }
 
-func (d MockedDownloader) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (n int64, err error) {
+func (d TestDownloader) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (n int64, err error) {
 	w.WriteAt(d.content.Bytes(), 0)
 	return int64(d.content.Len()), d.err
 }
 
-func (u MockedUploader) Upload(input *s3manager.UploadInput, options ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
+func (u TestUploader) Upload(input *s3manager.UploadInput, options ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
 	ioutil.ReadAll(input.Body)
 	return &u.output, u.err
 }
@@ -59,13 +59,13 @@ func TestContentStorePut(t *testing.T) {
 	var contentSize int64 = 12
 
 	contentStore = &ContentStore{
-		s3: MockedS3{
+		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
 				ContentLength: &contentSize,
 			},
 		},
-		downloader: MockedDownloader{},
-		uploader:   MockedUploader{},
+		downloader: TestDownloader{},
+		uploader:   TestUploader{},
 		bucket:     "test_bucket",
 	}
 
@@ -85,13 +85,13 @@ func TestContentStorePutHashMismatch(t *testing.T) {
 	var contentSize int64 = 12
 
 	contentStore = &ContentStore{
-		s3: MockedS3{
+		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
 				ContentLength: &contentSize,
 			},
 		},
-		downloader: MockedDownloader{},
-		uploader:   MockedUploader{},
+		downloader: TestDownloader{},
+		uploader:   TestUploader{},
 		bucket:     "test_bucket",
 	}
 
@@ -113,13 +113,13 @@ func TestContentStorePutSizeMismatch(t *testing.T) {
 	var contentSize int64 = 12
 
 	contentStore = &ContentStore{
-		s3: MockedS3{
+		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
 				ContentLength: &contentSize,
 			},
 		},
-		downloader: MockedDownloader{},
-		uploader:   MockedUploader{},
+		downloader: TestDownloader{},
+		uploader:   TestUploader{},
 		bucket:     "test_bucket",
 	}
 
@@ -141,11 +141,11 @@ func TestContentStoreGet(t *testing.T) {
 	b := bytes.NewBuffer([]byte("test content"))
 
 	contentStore = &ContentStore{
-		s3: MockedS3{},
-		downloader: MockedDownloader{
+		s3: TestS3{},
+		downloader: TestDownloader{
 			content: b,
 		},
-		uploader: MockedUploader{},
+		uploader: TestUploader{},
 		bucket:   "test_bucket",
 	}
 
@@ -177,11 +177,11 @@ func TestContentStoreGet(t *testing.T) {
 func TestContenStoreNotExists(t *testing.T) {
 
 	contentStore = &ContentStore{
-		s3: MockedS3{
+		s3: TestS3{
 			err: errors.New("error"),
 		},
-		downloader: MockedDownloader{},
-		uploader:   MockedUploader{},
+		downloader: TestDownloader{},
+		uploader:   TestUploader{},
 		bucket:     "test_bucket",
 	}
 
@@ -198,9 +198,9 @@ func TestContenStoreNotExists(t *testing.T) {
 func TestContentStoreExists(t *testing.T) {
 
 	contentStore = &ContentStore{
-		s3:         MockedS3{},
-		downloader: MockedDownloader{},
-		uploader:   MockedUploader{},
+		s3:         TestS3{},
+		downloader: TestDownloader{},
+		uploader:   TestUploader{},
 		bucket:     "test_bucket",
 	}
 

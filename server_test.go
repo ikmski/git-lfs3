@@ -3,18 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	dockertest "gopkg.in/ory-am/dockertest.v3"
 )
 
 var (
@@ -49,25 +40,9 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	cleanup, addr := prepareS3Container()
-	defer cleanup()
-
-	sess := session.Must(session.NewSession(&aws.Config{
-		Credentials:      credentials.NewStaticCredentials("dummy", "dummy", ""),
-		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String(endpoints.ApNortheast1RegionID),
-		Endpoint:         aws.String(addr),
-	}))
-
-	testContentStore, err = NewContentStore(sess, "lfs-test-bucket")
+	testContentStore, err = NewMockedContentStore("lfs-test-bucket")
 	if err != nil {
 		fmt.Printf("Error creating content store: %s", err)
-		os.Exit(1)
-	}
-
-	err = createBucket("lfs-test-bucket")
-	if err != nil {
-		fmt.Printf("Error creating bucket: %s", err)
 		os.Exit(1)
 	}
 
@@ -121,28 +96,6 @@ func seedMetaStore() error {
 	return nil
 }
 
-func createBucket(bucket string) error {
-
-	createInput := &s3.CreateBucketInput{
-		Bucket: aws.String(bucket),
-	}
-	_, err := testContentStore.s3.CreateBucket(createInput)
-	if err != nil {
-		aerr, ok := err.(awserr.Error)
-		if ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			fmt.Println(err.Error())
-		}
-		return err
-	}
-
-	return nil
-}
-
 func seedContentStore() error {
 
 	meta := &MetaObject{
@@ -158,45 +111,4 @@ func seedContentStore() error {
 	}
 
 	return nil
-}
-
-func prepareS3Container() (func(), string) {
-
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		fmt.Printf("couldn't not connect docker host: %s", err.Error())
-		os.Exit(1)
-	}
-
-	resource, err := pool.Run("atlassianlabs/localstack", "latest", []string{})
-	if err != nil {
-		fmt.Printf("couldn't start S3 container: %s", err.Error())
-		os.Exit(1)
-	}
-
-	addr := fmt.Sprintf("http://localhost:%s", resource.GetPort("4572/tcp"))
-
-	cleanup := func() {
-		if err := pool.Purge(resource); err != nil {
-			fmt.Printf("couldn't cleanup S3 container: %s", err.Error())
-			os.Exit(1)
-		}
-	}
-
-	err = pool.Retry(func() error {
-		resp, err := http.Get(addr)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != 200 {
-			return fmt.Errorf("didn't return status code 200: %s", resp.Status)
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Printf("couldn't prepare S3 container: %s", err.Error())
-		os.Exit(1)
-	}
-
-	return cleanup, addr
 }
