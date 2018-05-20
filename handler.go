@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,6 +38,24 @@ func (a *App) batchHandler(c *gin.Context) {
 
 	enc := json.NewEncoder(c.Writer)
 	enc.Encode(respobj)
+}
+
+func (a *App) downloadHandler(c *gin.Context) {
+
+	o := unpack(c)
+	meta, err := a.metaStore.Get(o)
+	if err != nil {
+		writeStatus(c, 404)
+		return
+	}
+
+	_, err = a.contentStore.Get(meta, newResponseWriterAt(c))
+	if err != nil {
+		writeStatus(c, 404)
+		return
+	}
+
+	c.Status(200)
 }
 
 func (a *App) Represent(o *Object, meta *MetaObject, download, upload bool) *Representation {
@@ -82,4 +101,38 @@ func unpackBatchRequest(c *gin.Context) *BatchRequest {
 	}
 
 	return &br
+}
+
+func unpack(c *gin.Context) *Object {
+
+	o := &Object{
+		User: c.Param("user"),
+		Repo: c.Param("repo"),
+		Oid:  c.Param("oid"),
+	}
+
+	return o
+}
+
+func writeStatus(c *gin.Context, status int) {
+
+	message := http.StatusText(status)
+	message = `{"message":"` + message + `"}`
+
+	c.Status(status)
+	fmt.Fprint(c.Writer, message)
+}
+
+type ResponseWriterAt struct {
+	responseWriter http.ResponseWriter
+}
+
+func (rw *ResponseWriterAt) WriteAt(b []byte, off int64) (int, error) {
+	return rw.responseWriter.Write(b)
+}
+
+func newResponseWriterAt(c *gin.Context) *ResponseWriterAt {
+	return &ResponseWriterAt{
+		responseWriter: c.Writer,
+	}
 }
