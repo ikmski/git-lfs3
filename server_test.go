@@ -15,18 +15,18 @@ var (
 )
 
 const (
-	testUser1         = "bilbo1"
-	testPass1         = "baggins1"
-	testUser2         = "bilbo2"
-	testPass2         = "baggins2"
-	testRepo          = "repo"
-	content           = "this is my content"
-	contentSize       = int64(len(content))
-	contentOid        = "f97e1b2936a56511b3b6efc99011758e4700d60fb1674d31445d1ee40b663f24"
-	nonExistingOid    = "aec070645fe53ee3b3763059376134f058cc337247c978add178b6ccdfb0019f"
-	lockId            = "3cfec93346f7ff337c60f2da50cd86740715e2f6"
-	nonExistingLockId = "f310c1555a2485e2e5229ea015a94c9d590763d3"
-	lockPath          = "this/is/lock/path"
+	testUser1             = "bilbo1"
+	testPass1             = "baggins1"
+	testUser2             = "bilbo2"
+	testPass2             = "baggins2"
+	testRepo              = "repo"
+	testContent           = "this is my content"
+	testContentSize       = int64(len(testContent))
+	testContentOid        = "f97e1b2936a56511b3b6efc99011758e4700d60fb1674d31445d1ee40b663f24"
+	testNonExistingOid    = "aec070645fe53ee3b3763059376134f058cc337247c978add178b6ccdfb0019f"
+	testLockId            = "3cfec93346f7ff337c60f2da50cd86740715e2f6"
+	testNonExistingLockId = "f310c1555a2485e2e5229ea015a94c9d590763d3"
+	testLockPath          = "this/is/lock/path"
 )
 
 func TestMain(m *testing.M) {
@@ -79,8 +79,8 @@ func seedMetaStore() error {
 	}
 
 	o := &Object{
-		Oid:  contentOid,
-		Size: contentSize,
+		Oid:  testContentOid,
+		Size: testContentSize,
 	}
 
 	_, err := testMetaStore.Put(o)
@@ -88,7 +88,7 @@ func seedMetaStore() error {
 		return err
 	}
 
-	lock := NewTestLock(lockId, lockPath, testUser1)
+	lock := NewTestLock(testLockId, testLockPath, testUser1)
 	if err := testMetaStore.AddLocks(testRepo, lock); err != nil {
 		return err
 	}
@@ -99,11 +99,11 @@ func seedMetaStore() error {
 func seedContentStore() error {
 
 	meta := &MetaObject{
-		Oid:  contentOid,
-		Size: contentSize,
+		Oid:  testContentOid,
+		Size: testContentSize,
 	}
 
-	buf := bytes.NewBuffer([]byte(content))
+	buf := bytes.NewBuffer([]byte(testContent))
 
 	err := testContentStore.Put(meta, buf)
 	if err != nil {

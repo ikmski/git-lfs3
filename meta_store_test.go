@@ -16,16 +16,16 @@ func TestGetMeta(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	meta, err := metaStoreTest.Get(&Object{Oid: contentOid})
+	meta, err := metaStoreTest.Get(&Object{Oid: testContentOid})
 	if err != nil {
 		t.Fatalf("Error retreiving meta: %s", err)
 	}
 
-	if meta.Oid != contentOid {
+	if meta.Oid != testContentOid {
 		t.Errorf("expected to get content oid, got: %s", meta.Oid)
 	}
 
-	if meta.Size != contentSize {
+	if meta.Size != testContentSize {
 		t.Errorf("expected to get content size, got: %d", meta.Size)
 	}
 }
@@ -35,7 +35,7 @@ func TestPutMeta(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	meta, err := metaStoreTest.Put(&Object{Oid: nonExistingOid, Size: 42})
+	meta, err := metaStoreTest.Put(&Object{Oid: testNonExistingOid, Size: 42})
 	if err != nil {
 		t.Errorf("expected put to succeed, got : %s", err)
 	}
@@ -44,12 +44,12 @@ func TestPutMeta(t *testing.T) {
 		t.Errorf("expected meta to not have existed")
 	}
 
-	meta, err = metaStoreTest.Get(&Object{Oid: nonExistingOid})
+	meta, err = metaStoreTest.Get(&Object{Oid: testNonExistingOid})
 	if err != nil {
 		t.Errorf("expected to be able to retreive new put, got : %s", err)
 	}
 
-	if meta.Oid != nonExistingOid {
+	if meta.Oid != testNonExistingOid {
 		t.Errorf("expected oids to match, got: %s", meta.Oid)
 	}
 
@@ -57,7 +57,7 @@ func TestPutMeta(t *testing.T) {
 		t.Errorf("expected sizes to match, got: %d", meta.Size)
 	}
 
-	meta, err = metaStoreTest.Put(&Object{Oid: nonExistingOid, Size: 42})
+	meta, err = metaStoreTest.Put(&Object{Oid: testNonExistingOid, Size: 42})
 	if err != nil {
 		t.Errorf("expected put to succeed, got : %s", err)
 	}
@@ -130,7 +130,7 @@ func TestAddLocks(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	lock := NewTestLock(lockId, lockPath, testUser1)
+	lock := NewTestLock(testLockId, testLockPath, testUser1)
 	if err := metaStoreTest.AddLocks(testRepo, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
@@ -142,7 +142,7 @@ func TestAddLocks(t *testing.T) {
 	if len(locks) != 1 {
 		t.Errorf("expected lock to be existed")
 	}
-	if locks[0].Id != lockId {
+	if locks[0].Id != testLockId {
 		t.Errorf("expected lockId to match, got: %s", locks[0])
 	}
 }
@@ -152,7 +152,7 @@ func TestDeleteLock(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	lock := NewTestLock(lockId, lockPath, testUser1)
+	lock := NewTestLock(testLockId, testLockPath, testUser1)
 	if err := metaStoreTest.AddLocks(testRepo, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
@@ -171,7 +171,7 @@ func TestDeleteLockNotOwner(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	lock := NewTestLock(lockId, lockPath, testUser1)
+	lock := NewTestLock(testLockId, testLockPath, testUser1)
 	if err := metaStoreTest.AddLocks(testRepo, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
@@ -191,7 +191,7 @@ func TestDeleteLockNotOwnerForce(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	lock := NewTestLock(lockId, lockPath, testUser1)
+	lock := NewTestLock(testLockId, testLockPath, testUser1)
 	if err := metaStoreTest.AddLocks(testRepo, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
@@ -210,12 +210,12 @@ func TestDeleteLockNonExisting(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	lock := NewTestLock(lockId, lockPath, testUser1)
+	lock := NewTestLock(testLockId, testLockPath, testUser1)
 	if err := metaStoreTest.AddLocks(testRepo, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	deleted, err := metaStoreTest.DeleteLock(testRepo, testUser1, nonExistingLockId, false)
+	deleted, err := metaStoreTest.DeleteLock(testRepo, testUser1, testNonExistingLockId, false)
 	if err != nil {
 		t.Errorf("expected DeleteLock to succeed, got : %s", err)
 	}
@@ -251,7 +251,7 @@ func setupMeta() {
 		os.Exit(1)
 	}
 
-	o := &Object{Oid: contentOid, Size: contentSize}
+	o := &Object{Oid: testContentOid, Size: testContentSize}
 	if _, err := metaStoreTest.Put(o); err != nil {
 		teardownMeta()
 		fmt.Printf("error seeding test meta store: %s\n", err)

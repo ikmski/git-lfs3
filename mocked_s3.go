@@ -24,6 +24,7 @@ func (d *MockedS3Data) Read(p []byte) (int, error) {
 }
 
 func (d *MockedS3Data) Write(p []byte) (int, error) {
+	d.data.Reset()
 	return d.data.Write(p)
 }
 
