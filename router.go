@@ -25,6 +25,7 @@ func newApp(meta *MetaStore, content *ContentStore) *App {
 	r.POST("/{user}/{repo}/objects/batch", app.batchHandler)
 
 	r.GET("/{user}/{repo}/objects/{oid}", app.downloadHandler)
+	r.PUT("/{user}/{repo}/objects/{oid}", app.uploadHandler)
 
 	app.router = r
 

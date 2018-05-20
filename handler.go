@@ -58,6 +58,24 @@ func (a *App) downloadHandler(c *gin.Context) {
 	c.Status(200)
 }
 
+func (a *App) uploadHandler(c *gin.Context) {
+
+	o := unpack(c)
+	meta, err := a.metaStore.Get(o)
+	if err != nil {
+		writeStatus(c, 404)
+		return
+	}
+
+	err = a.contentStore.Put(meta, c.Request.Body)
+	if err != nil {
+		a.metaStore.Delete(o)
+		c.Status(500)
+		fmt.Fprintf(c.Writer, `{"message":"%s"}`, err)
+		return
+	}
+}
+
 func (a *App) Represent(o *Object, meta *MetaObject, download, upload bool) *Representation {
 
 	rep := &Representation{
