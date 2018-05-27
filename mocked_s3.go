@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"regexp"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -94,8 +96,22 @@ func (md MockedDownloader) Download(w io.WriterAt, input *s3.GetObjectInput, opt
 
 	d, ok := mockedDataStore[*input.Key]
 	if ok {
-		w.WriteAt(d.Bytes(), 0)
-		return d.Len(), nil
+
+		var fromByte int64 = 0
+		toByte := d.Len()
+		regex := regexp.MustCompile(`bytes=(.*)\-(.*)`)
+		match := regex.FindStringSubmatch(*input.Range)
+		if match != nil && len(match) >= 3 {
+			if len(match[1]) > 0 {
+				fromByte, _ = strconv.ParseInt(match[1], 10, 64)
+			}
+			if len(match[2]) > 0 {
+				toByte, _ = strconv.ParseInt(match[2], 10, 64)
+			}
+		}
+
+		w.WriteAt(d.Bytes()[fromByte:toByte], 0)
+		return toByte - fromByte, nil
 	}
 
 	return int64(0), errors.New("")

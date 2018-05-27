@@ -163,7 +163,7 @@ func TestContentStoreGet(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(fileName)
 
-	_, err = contentStore.Get(m, f)
+	_, err = contentStore.Get(m, f, "")
 	if err != nil {
 		t.Fatalf("expected get to succeed, got: %s", err)
 	}

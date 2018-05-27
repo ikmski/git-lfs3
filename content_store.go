@@ -41,11 +41,12 @@ func NewContentStore(sess *session.Session, bucket string) (*ContentStore, error
 	return c, nil
 }
 
-func (s *ContentStore) Get(meta *MetaObject, w io.WriterAt) (int64, error) {
+func (s *ContentStore) Get(meta *MetaObject, w io.WriterAt, rangeHeader string) (int64, error) {
 
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(transformKey(meta.Oid)),
+		Range:  &rangeHeader,
 	}
 
 	return s.downloader.Download(w, input)

@@ -37,6 +37,48 @@ func TestDownload(t *testing.T) {
 	}
 }
 
+func TestDownloadWithRange(t *testing.T) {
+
+	path := fmt.Sprintf("%s/%s/%s/objects/%s", lfsServer.URL, testUser1, testRepo, testContentOid)
+	req, err := http.NewRequest("GET", path, nil)
+	if err != nil {
+		t.Fatalf("request error: %s", err)
+	}
+	req.Header.Set("Accept", contentMediaType)
+
+	fromByte := 5
+	req.Header.Set("Range", fmt.Sprintf("bytes=%d-", fromByte))
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("request error: %s", err)
+	}
+
+	if res.StatusCode != 206 {
+		t.Fatalf("expected status 206, got %d", res.StatusCode)
+	}
+
+	cr := res.Header.Get("Content-Range")
+	if len(cr) > 0 {
+		expected := fmt.Sprintf("bytes %d-%d/%d", fromByte, len(testContent)-1, len(testContent)-fromByte)
+		if cr != expected {
+			t.Fatalf("expected Content-Range header of %q, got %q", expected, cr)
+		}
+	} else {
+		t.Fatalf("missing Content-Range header in response")
+	}
+
+	by, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("expected response to contain content, got error: %s", err)
+	}
+
+	if string(by) != testContent[fromByte:] {
+		t.Fatalf("expected content to be `content`, got: %s", string(by))
+	}
+
+}
+
 func TestUpload(t *testing.T) {
 
 	path := fmt.Sprintf("%s/%s/%s/objects/%s", lfsServer.URL, testUser1, testRepo, testContentOid)
@@ -70,7 +112,7 @@ func TestUpload(t *testing.T) {
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}
-	_, err = testContentStore.Get(m, f)
+	_, err = testContentStore.Get(m, f, "")
 	if err != nil {
 		t.Fatalf("error retreiving from content store: %s", err)
 	}
