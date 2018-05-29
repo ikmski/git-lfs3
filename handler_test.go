@@ -108,7 +108,7 @@ func TestUpload(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(fileName)
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}

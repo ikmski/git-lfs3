@@ -78,7 +78,7 @@ func seedMetaStore() error {
 		return err
 	}
 
-	o := &Object{
+	o := &ObjectRequest{
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}
@@ -98,7 +98,7 @@ func seedMetaStore() error {
 
 func seedContentStore() error {
 
-	meta := &MetaObject{
+	meta := &ObjectMetaData{
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}

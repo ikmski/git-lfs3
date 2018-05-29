@@ -41,7 +41,7 @@ func NewContentStore(sess *session.Session, bucket string) (*ContentStore, error
 	return c, nil
 }
 
-func (s *ContentStore) Get(meta *MetaObject, w io.WriterAt, rangeHeader string) (int64, error) {
+func (s *ContentStore) Get(meta *ObjectMetaData, w io.WriterAt, rangeHeader string) (int64, error) {
 
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -52,7 +52,7 @@ func (s *ContentStore) Get(meta *MetaObject, w io.WriterAt, rangeHeader string) 
 	return s.downloader.Download(w, input)
 }
 
-func (s *ContentStore) Put(meta *MetaObject, r io.Reader) error {
+func (s *ContentStore) Put(meta *ObjectMetaData, r io.Reader) error {
 
 	hash := sha256.New()
 	tee := io.TeeReader(r, hash)
@@ -108,7 +108,7 @@ func (s *ContentStore) Put(meta *MetaObject, r io.Reader) error {
 	return nil
 }
 
-func (s *ContentStore) Exists(meta *MetaObject) bool {
+func (s *ContentStore) Exists(meta *ObjectMetaData) bool {
 
 	input := &s3.HeadObjectInput{
 		Bucket: aws.String(s.bucket),

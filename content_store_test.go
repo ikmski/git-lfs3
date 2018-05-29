@@ -69,7 +69,7 @@ func TestContentStorePut(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: contentSize,
 	}
@@ -95,7 +95,7 @@ func TestContentStorePutHashMismatch(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: contentSize,
 	}
@@ -123,7 +123,7 @@ func TestContentStorePutSizeMismatch(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 14,
 	}
@@ -149,7 +149,7 @@ func TestContentStoreGet(t *testing.T) {
 		bucket:   "test_bucket",
 	}
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}
@@ -185,7 +185,7 @@ func TestContenStoreNotExists(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}
@@ -204,7 +204,7 @@ func TestContentStoreExists(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &MetaObject{
+	m := &ObjectMetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}

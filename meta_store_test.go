@@ -16,7 +16,7 @@ func TestGetMeta(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	meta, err := metaStoreTest.Get(&Object{Oid: testContentOid})
+	meta, err := metaStoreTest.Get(&ObjectRequest{Oid: testContentOid})
 	if err != nil {
 		t.Fatalf("Error retreiving meta: %s", err)
 	}
@@ -35,7 +35,7 @@ func TestPutMeta(t *testing.T) {
 	setupMeta()
 	defer teardownMeta()
 
-	meta, err := metaStoreTest.Put(&Object{Oid: testNonExistingOid, Size: 42})
+	meta, err := metaStoreTest.Put(&ObjectRequest{Oid: testNonExistingOid, Size: 42})
 	if err != nil {
 		t.Errorf("expected put to succeed, got : %s", err)
 	}
@@ -44,7 +44,7 @@ func TestPutMeta(t *testing.T) {
 		t.Errorf("expected meta to not have existed")
 	}
 
-	meta, err = metaStoreTest.Get(&Object{Oid: testNonExistingOid})
+	meta, err = metaStoreTest.Get(&ObjectRequest{Oid: testNonExistingOid})
 	if err != nil {
 		t.Errorf("expected to be able to retreive new put, got : %s", err)
 	}
@@ -57,7 +57,7 @@ func TestPutMeta(t *testing.T) {
 		t.Errorf("expected sizes to match, got: %d", meta.Size)
 	}
 
-	meta, err = metaStoreTest.Put(&Object{Oid: testNonExistingOid, Size: 42})
+	meta, err = metaStoreTest.Put(&ObjectRequest{Oid: testNonExistingOid, Size: 42})
 	if err != nil {
 		t.Errorf("expected put to succeed, got : %s", err)
 	}
@@ -251,7 +251,7 @@ func setupMeta() {
 		os.Exit(1)
 	}
 
-	o := &Object{Oid: testContentOid, Size: testContentSize}
+	o := &ObjectRequest{Oid: testContentOid, Size: testContentSize}
 	if _, err := metaStoreTest.Put(o); err != nil {
 		teardownMeta()
 		fmt.Printf("error seeding test meta store: %s\n", err)

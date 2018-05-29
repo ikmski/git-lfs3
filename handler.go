@@ -13,38 +13,44 @@ import (
 
 func (a *App) batchHandler(c *gin.Context) {
 
-	br := unpackBatchRequest(c)
+	br := parseBatchRequest(c)
 
-	var responseObjects []*Representation
+	var responseObjects []*ResponseObject
 
-	// Create a response object
 	for _, object := range br.Objects {
 
 		meta, err := a.metaStore.Get(object)
+
 		if err == nil && a.contentStore.Exists(meta) {
 			// Object is found and exists
-			responseObjects = append(responseObjects, a.Represent(object, meta, true, false))
+			responseObject := a.createResponseObject(object, meta, true, false)
+			responseObjects = append(responseObjects, responseObject)
 			continue
 		}
 
 		// Object is not found
 		meta, err = a.metaStore.Put(object)
 		if err == nil {
-			responseObjects = append(responseObjects, a.Represent(object, meta, meta.Existing, true))
+			responseObject := a.createResponseObject(object, meta, meta.Existing, true)
+			responseObjects = append(responseObjects, responseObject)
 		}
 	}
 
+	response := &BatchResponse{
+		Transfer: "basic",
+		Objects:  responseObjects,
+	}
+
+	encoder := json.NewEncoder(c.Writer)
+	encoder.Encode(response)
+
 	c.Writer.Header().Set("Content-Type", metaMediaType)
-
-	respobj := &BatchResponse{Objects: responseObjects}
-
-	enc := json.NewEncoder(c.Writer)
-	enc.Encode(respobj)
+	c.Status(200)
 }
 
 func (a *App) downloadHandler(c *gin.Context) {
 
-	o := unpack(c)
+	o := parseObjectRequest(c)
 	meta, err := a.metaStore.Get(o)
 	if err != nil {
 		writeStatus(c, 404)
@@ -80,7 +86,7 @@ func (a *App) downloadHandler(c *gin.Context) {
 
 func (a *App) uploadHandler(c *gin.Context) {
 
-	o := unpack(c)
+	o := parseObjectRequest(c)
 	meta, err := a.metaStore.Get(o)
 	if err != nil {
 		writeStatus(c, 404)
@@ -96,23 +102,31 @@ func (a *App) uploadHandler(c *gin.Context) {
 	}
 }
 
-func (a *App) Represent(o *Object, meta *MetaObject, download, upload bool) *Representation {
+func (a *App) createResponseObject(o *ObjectRequest, meta *ObjectMetaData, download, upload bool) *ResponseObject {
 
-	rep := &Representation{
+	rep := &ResponseObject{
 		Oid:     meta.Oid,
 		Size:    meta.Size,
-		Actions: make(map[string]*link),
+		Actions: make(map[string]*Link),
 	}
 
 	header := make(map[string]string)
 	header["Accept"] = contentMediaType
+
 	if download {
-		rep.Actions["download"] = &link{Href: o.DownloadLink(), Header: header}
+		rep.Actions["download"] = &Link{
+			Href:   o.DownloadLink(),
+			Header: header,
+		}
 	}
 
 	if upload {
-		rep.Actions["upload"] = &link{Href: o.UploadLink(), Header: header}
+		rep.Actions["upload"] = &Link{
+			Href:   o.UploadLink(),
+			Header: header,
+		}
 	}
+
 	return rep
 }
 
@@ -123,7 +137,7 @@ func randomLockId() string {
 	return fmt.Sprintf("%x", id[:])
 }
 
-func unpackBatchRequest(c *gin.Context) *BatchRequest {
+func parseBatchRequest(c *gin.Context) *BatchRequest {
 
 	var br BatchRequest
 
@@ -141,9 +155,9 @@ func unpackBatchRequest(c *gin.Context) *BatchRequest {
 	return &br
 }
 
-func unpack(c *gin.Context) *Object {
+func parseObjectRequest(c *gin.Context) *ObjectRequest {
 
-	o := &Object{
+	o := &ObjectRequest{
 		User: c.Param("user"),
 		Repo: c.Param("repo"),
 		Oid:  c.Param("oid"),

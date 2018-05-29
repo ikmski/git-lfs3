@@ -63,7 +63,7 @@ func NewMetaStore(dbFile string) (*MetaStore, error) {
 
 // Get retrieves the Meta information for an object given information in
 // Object
-func (s *MetaStore) Get(o *Object) (*MetaObject, error) {
+func (s *MetaStore) Get(o *ObjectRequest) (*ObjectMetaData, error) {
 
 	meta, error := s.UnsafeGet(o)
 	return meta, error
@@ -72,9 +72,9 @@ func (s *MetaStore) Get(o *Object) (*MetaObject, error) {
 // Get retrieves the Meta information for an object given information in
 // Object
 // DO NOT CHECK authentication, as it is supposed to have been done before
-func (s *MetaStore) UnsafeGet(o *Object) (*MetaObject, error) {
+func (s *MetaStore) UnsafeGet(o *ObjectRequest) (*ObjectMetaData, error) {
 
-	var meta MetaObject
+	var meta ObjectMetaData
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(objectsBucket)
@@ -99,7 +99,7 @@ func (s *MetaStore) UnsafeGet(o *Object) (*MetaObject, error) {
 }
 
 // Put writes meta information from Object to the store.
-func (s *MetaStore) Put(o *Object) (*MetaObject, error) {
+func (s *MetaStore) Put(o *ObjectRequest) (*ObjectMetaData, error) {
 
 	// Check if it exists first
 	if meta, err := s.Get(o); err == nil {
@@ -109,7 +109,7 @@ func (s *MetaStore) Put(o *Object) (*MetaObject, error) {
 
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	meta := MetaObject{Oid: o.Oid, Size: o.Size}
+	meta := ObjectMetaData{Oid: o.Oid, Size: o.Size}
 	err := enc.Encode(meta)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (s *MetaStore) Put(o *Object) (*MetaObject, error) {
 }
 
 // Delete removes the meta information from Object to the store.
-func (s *MetaStore) Delete(o *Object) error {
+func (s *MetaStore) Delete(o *ObjectRequest) error {
 
 	err := s.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(objectsBucket)
@@ -389,9 +389,9 @@ func (s *MetaStore) Users() ([]*MetaUser, error) {
 }
 
 // Objects returns all MetaObjects in the meta store
-func (s *MetaStore) Objects() ([]*MetaObject, error) {
+func (s *MetaStore) Objects() ([]*ObjectMetaData, error) {
 
-	var objects []*MetaObject
+	var objects []*ObjectMetaData
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 
@@ -401,7 +401,7 @@ func (s *MetaStore) Objects() ([]*MetaObject, error) {
 		}
 
 		bucket.ForEach(func(k, v []byte) error {
-			var meta MetaObject
+			var meta ObjectMetaData
 			dec := gob.NewDecoder(bytes.NewBuffer(v))
 			err := dec.Decode(&meta)
 			if err != nil {

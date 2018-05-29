@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Object struct {
+type ObjectRequest struct {
 	Oid      string
 	Size     int64
 	User     string
@@ -14,12 +14,12 @@ type Object struct {
 }
 
 type BatchRequest struct {
-	Transfers []string  `json:"transfers,omitempty"`
-	Operation string    `json:"operation"`
-	Objects   []*Object `json:"objects"`
+	Transfers []string         `json:"transfers,omitempty"`
+	Operation string           `json:"operation"`
+	Objects   []*ObjectRequest `json:"objects"`
 }
 
-type MetaObject struct {
+type ObjectMetaData struct {
 	Oid      string `json:"oid"`
 	Size     int64  `json:"size"`
 	Existing bool
@@ -27,14 +27,20 @@ type MetaObject struct {
 
 type BatchResponse struct {
 	Transfer string            `json:"transfer,omitempty"`
-	Objects  []*Representation `json:"objects"`
+	Objects  []*ResponseObject `json:"objects"`
 }
 
-type Representation struct {
+type ResponseObject struct {
 	Oid     string           `json:"oid"`
 	Size    int64            `json:"size"`
-	Actions map[string]*link `json:"actions"`
+	Actions map[string]*Link `json:"actions"`
 	Error   *ObjectError     `json:"error,omitempty"`
+}
+
+type Link struct {
+	Href      string            `json:"href"`
+	Header    map[string]string `json:"header,omitempty"`
+	ExpiresAt time.Time         `json:"expires_at,omitempty"`
 }
 
 type ObjectError struct {
@@ -89,29 +95,29 @@ type VerifiableLockList struct {
 	Message    string `json:"message,omitempty"`
 }
 
-func (v *Object) DownloadLink() string {
+func (o *ObjectRequest) DownloadLink() string {
 
-	return v.internalLink("objects")
+	return o.internalLink("objects")
 }
 
-func (v *Object) UploadLink() string {
+func (o *ObjectRequest) UploadLink() string {
 
-	return v.internalLink("objects")
+	return o.internalLink("objects")
 }
 
-func (v *Object) internalLink(subpath string) string {
+func (o *ObjectRequest) internalLink(subpath string) string {
 
 	path := ""
 
-	if len(v.User) > 0 {
-		path += fmt.Sprintf("/%s", v.User)
+	if len(o.User) > 0 {
+		path += fmt.Sprintf("/%s", o.User)
 	}
 
-	if len(v.Repo) > 0 {
-		path += fmt.Sprintf("/%s", v.Repo)
+	if len(o.Repo) > 0 {
+		path += fmt.Sprintf("/%s", o.Repo)
 	}
 
-	path += fmt.Sprintf("/%s/%s", subpath, v.Oid)
+	path += fmt.Sprintf("/%s/%s", subpath, o.Oid)
 
 	if config.Server.Tls {
 		return fmt.Sprintf("https://%s%s", config.Server.Host, path)
@@ -120,19 +126,13 @@ func (v *Object) internalLink(subpath string) string {
 	return fmt.Sprintf("http://%s%s", config.Server.Host, path)
 }
 
-func (v *Object) VerifyLink() string {
+func (o *ObjectRequest) VerifyLink() string {
 
-	path := fmt.Sprintf("/verify/%s", v.Oid)
+	path := fmt.Sprintf("/verify/%s", o.Oid)
 
 	if config.Server.Tls {
 		return fmt.Sprintf("https://%s%s", config.Server.Host, path)
 	}
 
 	return fmt.Sprintf("http://%s%s", config.Server.Host, path)
-}
-
-type link struct {
-	Href      string            `json:"href"`
-	Header    map[string]string `json:"header,omitempty"`
-	ExpiresAt time.Time         `json:"expires_at,omitempty"`
 }
