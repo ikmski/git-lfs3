@@ -6,16 +6,17 @@ import (
 )
 
 type ObjectRequest struct {
-	Oid      string
-	Size     int64
+	Oid      string `json:"oid"`
+	Size     int64  `json:"size"`
 	User     string
 	Password string
 	Repo     string
 }
 
 type BatchRequest struct {
-	Transfers []string         `json:"transfers,omitempty"`
 	Operation string           `json:"operation"`
+	Transfers []string         `json:"transfers,omitempty"`
+	Ref       Ref              `json:"ref,omitempty"`
 	Objects   []*ObjectRequest `json:"objects"`
 }
 
@@ -35,6 +36,10 @@ type ResponseObject struct {
 	Size    int64            `json:"size"`
 	Actions map[string]*Link `json:"actions"`
 	Error   *ObjectError     `json:"error,omitempty"`
+}
+
+type Ref struct {
+	Name string `json:"name"`
 }
 
 type Link struct {
