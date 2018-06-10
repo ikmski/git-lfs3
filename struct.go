@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ObjectRequest struct {
@@ -140,4 +143,18 @@ func (o *ObjectRequest) VerifyLink() string {
 	}
 
 	return fmt.Sprintf("http://%s%s", config.Server.Host, path)
+}
+
+type ResponseWriterAt struct {
+	responseWriter http.ResponseWriter
+}
+
+func (rw *ResponseWriterAt) WriteAt(b []byte, off int64) (int, error) {
+	return rw.responseWriter.Write(b)
+}
+
+func newResponseWriterAt(c *gin.Context) *ResponseWriterAt {
+	return &ResponseWriterAt{
+		responseWriter: c.Writer,
+	}
 }
