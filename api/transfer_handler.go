@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -6,9 +6,27 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ikmski/git-lfs3/adapter"
 )
 
-func (a *App) downloadHandler(c *gin.Context) {
+type transferHandler struct {
+	transferController adapter.TransferController
+}
+
+// TransferHandler is ...
+type TransferHandler interface {
+	Download(c *gin.Context)
+	Upload(c *gin.Context)
+}
+
+// NewTransferHandler is ...
+func NewTransferHandler(c adapter.TransferController) TransferHandler {
+	return &transferHandler{
+		transferController: c,
+	}
+}
+
+func (h *transferHandler) Download(c *gin.Context) {
 
 	o := parseObjectRequest(c)
 	meta, err := a.metaStore.Get(o)
@@ -20,7 +38,7 @@ func (a *App) downloadHandler(c *gin.Context) {
 	rangeHeader := c.GetHeader("Range")
 	if rangeHeader != "" {
 
-		var fromByte int64 = 0
+		var fromByte int64
 		var toByte int64 = meta.Size
 		regex := regexp.MustCompile(`bytes=(.*)\-(.*)`)
 		match := regex.FindStringSubmatch(rangeHeader)
@@ -44,7 +62,7 @@ func (a *App) downloadHandler(c *gin.Context) {
 	}
 }
 
-func (a *App) uploadHandler(c *gin.Context) {
+func (h *transferHandler) Upload(c *gin.Context) {
 
 	o := parseObjectRequest(c)
 	meta, err := a.metaStore.Get(o)

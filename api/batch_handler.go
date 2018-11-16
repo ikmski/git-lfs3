@@ -7,9 +7,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ikmski/git-lfs3/adapter"
 )
 
-func (a *App) batchHandler(c *gin.Context) {
+type batchHandler struct {
+	batchController adapter.BatchController
+}
+
+// BatchHandler is ...
+type BatchHandler interface {
+	Batch(c *gin.Context)
+}
+
+// NewBatchHandler is ...
+func NewBatchHandler(c adapter.BatchController) BatchHandler {
+	return &batchHandler{
+		batchController: c,
+	}
+}
+
+func (h *batchHandler) Batch(c *gin.Context) {
 
 	br := parseBatchRequest(c)
 
@@ -46,7 +63,7 @@ func (a *App) batchHandler(c *gin.Context) {
 	c.Status(200)
 }
 
-func (a *App) createResponseObject(o *ObjectRequest, meta *ObjectMetaData, download, upload bool) *ResponseObject {
+func createResponseObject(o *ObjectRequest, meta *ObjectMetaData, download, upload bool) *ResponseObject {
 
 	rep := &ResponseObject{
 		Oid:     meta.Oid,
