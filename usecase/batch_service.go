@@ -1,6 +1,10 @@
 package usecase
 
-import "time"
+import "github.com/ikmski/git-lfs3/entity"
+
+const (
+	contentMediaType = "application/vnd.git-lfs"
+)
 
 // BatchService is ...
 type BatchService interface {
@@ -10,61 +14,81 @@ type BatchService interface {
 type batchService struct {
 	MetaDataRepository MetaDataRepository
 	MetaDataPresenter  MetaDataPresenter
-}
-
-// ObjectRequest is ...
-type ObjectRequest struct {
-	Oid      string
-	Size     int64
-	User     string
-	Password string
-	Repo     string
-}
-
-// BatchRequest is ...
-type BatchRequest struct {
-	Operation string
-	Transfers []string
-	Ref       string
-	Objects   []*ObjectRequest
-}
-
-// ObjectError is ...
-type ObjectError struct {
-	Code    int
-	Message string
-}
-
-// ObjectResult is ...
-type ObjectResult struct {
-	Oid     string
-	Size    int64
-	Actions map[string]*Link
-	Error   *ObjectError
-}
-
-// BatchResult is ...
-type BatchResult struct {
-	Transfer string
-	Objects  []*ObjectResult
-}
-
-// Link is ...
-type Link struct {
-	Href      string
-	Header    map[string]string
-	ExpiresAt time.Time
+	ContentRepository  ContentRepository
+	ContentPresenter   ContentPresenter
 }
 
 // NewBatchService is ...
-func NewBatchService(repo MetaDataRepository, pre MetaDataPresenter) BatchService {
+func NewBatchService(
+	metaDataRepo MetaDataRepository,
+	metaDataPre MetaDataPresenter,
+	contentRepo ContentRepository,
+	contentPre ContentPresenter) BatchService {
 	return &batchService{
-		MetaDataRepository: repo,
-		MetaDataPresenter:  pre,
+		MetaDataRepository: metaDataRepo,
+		MetaDataPresenter:  metaDataPre,
+		ContentRepository:  contentRepo,
+		ContentPresenter:   contentPre,
 	}
 }
 
 func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 
-	return nil, nil
+	var objectResults []*ObjectResult
+
+	for _, obj := range req.Objects {
+
+		meta, err := c.MetaDataRepository.Get(obj)
+
+		if err == nil && c.ContentRepository.Exists(meta) {
+			// Object is found and exists
+			responseObject := createResponseObject(obj, meta, true, false)
+			objectResults = append(objectResults, responseObject)
+			continue
+		}
+
+		// Object is not found
+		meta, err = c.MetaDataRepository.Put(obj)
+		if err == nil {
+			responseObject := createResponseObject(obj, meta, meta.Existing, true)
+			objectResults = append(objectResults, responseObject)
+		}
+	}
+
+	result := &BatchResult{
+		Transfer: "basic",
+		Objects:  objectResults,
+	}
+
+	return result, nil
+}
+
+func createResponseObject(o *ObjectRequest, meta *entity.MetaData, download, upload bool) *ObjectResult {
+
+	rep := &ObjectResult{
+		Oid:     meta.Oid,
+		Size:    meta.Size,
+		Actions: make(map[string]*Link),
+	}
+
+	/*
+		header := make(map[string]string)
+		header["Accept"] = contentMediaType
+
+		if download {
+			rep.Actions["download"] = &Link{
+				Href:   o.DownloadLink(),
+				Header: header,
+			}
+		}
+
+		if upload {
+			rep.Actions["upload"] = &Link{
+				Href:   o.UploadLink(),
+				Header: header,
+			}
+		}
+	*/
+
+	return rep
 }

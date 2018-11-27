@@ -1,12 +1,14 @@
 package adapter
 
 import (
+	"encoding/json"
+
 	"github.com/ikmski/git-lfs3/usecase"
 )
 
 // BatchController is ...
 type BatchController interface {
-	Batch(req *BatchRequest) (*BatchResult, error)
+	Batch(ctx *Context) (*Context, error)
 }
 
 type batchController struct {
@@ -20,7 +22,43 @@ func NewBatchController(s usecase.BatchService) BatchController {
 	}
 }
 
-func (c *batchController) Batch(req *BatchRequest) (*BatchResult, error) {
+func (c *batchController) Batch(ctx *Context) {
 
-	return nil, nil
+	req := parseBatchRequest(ctx)
+
+	res, err = c.batchService.Batch(req)
+
+	if err != nil {
+
+	}
+
+	json, err := json.Marshal(res)
+	if err != nil {
+
+	}
+
+	ctx.Header("Content-Type", metaMediaType)
+	ctx.JSON(200, json)
+}
+
+func parseBatchRequest(ctx *Context) *usecase.BatchRequest {
+
+	var br usecase.BatchRequest
+
+	data, err := ctx.GetRawData()
+	if err != nil {
+		return &br
+	}
+
+	err = json.Unmarshal(data, &br)
+	if err != nil {
+		return &br
+	}
+
+	for i := 0; i < len(br.Objects); i++ {
+		br.Objects[i].User = c.Param("user")
+		br.Objects[i].Repo = c.Param("repo")
+	}
+
+	return &br
 }
