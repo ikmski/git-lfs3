@@ -6,27 +6,32 @@ import (
 	"github.com/ikmski/git-lfs3/usecase"
 )
 
+const (
+	contentMediaType = "application/vnd.git-lfs"
+	metaMediaType    = contentMediaType + "+json"
+)
+
 // BatchController is ...
 type BatchController interface {
-	Batch(ctx *Context) (*Context, error)
+	Batch(ctx Context)
 }
 
 type batchController struct {
-	batchService usecase.BatchService
+	BatchService usecase.BatchService
 }
 
 // NewBatchController is ...
 func NewBatchController(s usecase.BatchService) BatchController {
 	return &batchController{
-		batchService: s,
+		BatchService: s,
 	}
 }
 
-func (c *batchController) Batch(ctx *Context) {
+func (c *batchController) Batch(ctx Context) {
 
 	req := parseBatchRequest(ctx)
 
-	res, err = c.batchService.Batch(req)
+	res, err := c.BatchService.Batch(req)
 
 	if err != nil {
 
@@ -41,7 +46,7 @@ func (c *batchController) Batch(ctx *Context) {
 	ctx.JSON(200, json)
 }
 
-func parseBatchRequest(ctx *Context) *usecase.BatchRequest {
+func parseBatchRequest(ctx Context) *usecase.BatchRequest {
 
 	var br usecase.BatchRequest
 
@@ -56,8 +61,8 @@ func parseBatchRequest(ctx *Context) *usecase.BatchRequest {
 	}
 
 	for i := 0; i < len(br.Objects); i++ {
-		br.Objects[i].User = c.Param("user")
-		br.Objects[i].Repo = c.Param("repo")
+		br.Objects[i].User = ctx.Param("user")
+		br.Objects[i].Repo = ctx.Param("repo")
 	}
 
 	return &br

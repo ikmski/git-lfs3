@@ -8,7 +8,6 @@ import (
 
 type transferService struct {
 	ContentRepository ContentRepository
-	ContentPresenter  ContentPresenter
 }
 
 // TransferService is ...
@@ -19,10 +18,9 @@ type TransferService interface {
 }
 
 // NewTransferService is ...
-func NewTransferService(repo ContentRepository, pre ContentPresenter) TransferService {
+func NewTransferService(repo ContentRepository) TransferService {
 	return &transferService{
 		ContentRepository: repo,
-		ContentPresenter:  pre,
 	}
 }
 

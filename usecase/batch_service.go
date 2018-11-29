@@ -2,10 +2,6 @@ package usecase
 
 import "github.com/ikmski/git-lfs3/entity"
 
-const (
-	contentMediaType = "application/vnd.git-lfs"
-)
-
 // BatchService is ...
 type BatchService interface {
 	Batch(req *BatchRequest) (*BatchResult, error)
@@ -13,22 +9,14 @@ type BatchService interface {
 
 type batchService struct {
 	MetaDataRepository MetaDataRepository
-	MetaDataPresenter  MetaDataPresenter
 	ContentRepository  ContentRepository
-	ContentPresenter   ContentPresenter
 }
 
 // NewBatchService is ...
-func NewBatchService(
-	metaDataRepo MetaDataRepository,
-	metaDataPre MetaDataPresenter,
-	contentRepo ContentRepository,
-	contentPre ContentPresenter) BatchService {
+func NewBatchService(metaDataRepo MetaDataRepository, contentRepo ContentRepository) BatchService {
 	return &batchService{
 		MetaDataRepository: metaDataRepo,
-		MetaDataPresenter:  metaDataPre,
 		ContentRepository:  contentRepo,
-		ContentPresenter:   contentPre,
 	}
 }
 
@@ -42,16 +30,16 @@ func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 
 		if err == nil && c.ContentRepository.Exists(meta) {
 			// Object is found and exists
-			responseObject := createResponseObject(obj, meta, true, false)
-			objectResults = append(objectResults, responseObject)
+			objectResult := createObjectResult(obj, meta, true, true)
+			objectResults = append(objectResults, objectResult)
 			continue
 		}
 
 		// Object is not found
 		meta, err = c.MetaDataRepository.Put(obj)
 		if err == nil {
-			responseObject := createResponseObject(obj, meta, meta.Existing, true)
-			objectResults = append(objectResults, responseObject)
+			objectResult := createObjectResult(obj, meta, meta.Existing, false)
+			objectResults = append(objectResults, objectResult)
 		}
 	}
 
@@ -63,12 +51,14 @@ func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 	return result, nil
 }
 
-func createResponseObject(o *ObjectRequest, meta *entity.MetaData, download, upload bool) *ObjectResult {
+func createObjectResult(o *ObjectRequest, meta *entity.MetaData, metaExists, objectExists bool) *ObjectResult {
 
-	rep := &ObjectResult{
-		Oid:     meta.Oid,
-		Size:    meta.Size,
-		Actions: make(map[string]*Link),
+	return &ObjectResult{
+		Oid:          meta.Oid,
+		Size:         meta.Size,
+		MetaExists:   metaExists,
+		ObjectExists: objectExists,
+		//Actions: make(map[string]*Link),
 	}
 
 	/*
@@ -90,5 +80,5 @@ func createResponseObject(o *ObjectRequest, meta *entity.MetaData, download, upl
 		}
 	*/
 
-	return rep
+	//return rep
 }

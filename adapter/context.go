@@ -5,6 +5,6 @@ type Context interface {
 	Param(string) string
 	GetRawData() ([]byte, error)
 	Status(int)
-	Header(key, value, string)
+	Header(string, string)
 	JSON(int, interface{})
 }

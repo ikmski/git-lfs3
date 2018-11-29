@@ -2,6 +2,14 @@ package usecase
 
 import "time"
 
+// BatchRequest is ...
+type BatchRequest struct {
+	Operation string
+	Transfers []string
+	Ref       string
+	Objects   []*ObjectRequest
+}
+
 // ObjectRequest is ...
 type ObjectRequest struct {
 	Oid      string
@@ -9,14 +17,6 @@ type ObjectRequest struct {
 	User     string
 	Password string
 	Repo     string
-}
-
-// BatchRequest is ...
-type BatchRequest struct {
-	Operation string
-	Transfers []string
-	Ref       string
-	Objects   []*ObjectRequest
 }
 
 // ObjectError is ...
@@ -27,10 +27,12 @@ type ObjectError struct {
 
 // ObjectResult is ...
 type ObjectResult struct {
-	Oid     string
-	Size    int64
-	Actions map[string]*Link
-	Error   *ObjectError
+	Oid          string
+	Size         int64
+	MetaExists   bool
+	ObjectExists bool
+	//Actions map[string]*Link
+	//Error   *ObjectError
 }
 
 // BatchResult is ...

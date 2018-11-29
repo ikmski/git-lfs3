@@ -3,7 +3,7 @@ package adapter
 import "github.com/ikmski/git-lfs3/usecase"
 
 type transferController struct {
-	contentService usecase.ContentService
+	transferService usecase.TransferService
 }
 
 // TransferController is ...
@@ -11,8 +11,8 @@ type TransferController interface {
 }
 
 // NewTransferController is ...
-func NewTransferController(s usecase.ContentService) TransferController {
+func NewTransferController(s usecase.TransferService) TransferController {
 	return &transferController{
-		contentService: s,
+		transferService: s,
 	}
 }
