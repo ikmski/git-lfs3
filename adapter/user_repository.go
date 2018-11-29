@@ -64,7 +64,7 @@ func (s *userRepository) Users() ([]*entity.User, error) {
 	err := s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(usersBucket)
 		if bucket == nil {
-			return errNoBucket
+			return errors.New("Bucket not found")
 		}
 
 		bucket.ForEach(func(k, v []byte) error {

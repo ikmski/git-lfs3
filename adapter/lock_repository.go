@@ -15,6 +15,7 @@ import (
 
 var (
 	locksBucket = []byte("locks")
+	errNotOwner = errors.New("Attempt to delete other user's lock")
 )
 
 type lockRepository struct {
@@ -153,7 +154,7 @@ func (s *lockRepository) DeleteLock(repo, user, id string, force bool) (*entity.
 		for _, l := range locks {
 			if l.ID == id {
 				if l.Owner.Name != user && !force {
-					return errors.New("Attempt to delete other user's lock")
+					return errNotOwner
 				}
 				lock = l
 			} else if len(l.ID) > 0 {
