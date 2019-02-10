@@ -2,6 +2,37 @@ package usecase
 
 import "github.com/ikmski/git-lfs3/entity"
 
+// BatchRequest is ...
+type BatchRequest struct {
+	Operation string
+	Transfers []string
+	Ref       string
+	Objects   []*ObjectRequest
+}
+
+// ObjectRequest is ...
+type ObjectRequest struct {
+	Oid      string
+	Size     int64
+	User     string
+	Password string
+	Repo     string
+}
+
+// ObjectResult is ...
+type ObjectResult struct {
+	Oid          string
+	Size         int64
+	MetaExists   bool
+	ObjectExists bool
+}
+
+// BatchResult is ...
+type BatchResult struct {
+	Transfer string
+	Objects  []*ObjectResult
+}
+
 // BatchService is ...
 type BatchService interface {
 	Batch(req *BatchRequest) (*BatchResult, error)
@@ -58,27 +89,5 @@ func createObjectResult(o *ObjectRequest, meta *entity.MetaData, metaExists, obj
 		Size:         meta.Size,
 		MetaExists:   metaExists,
 		ObjectExists: objectExists,
-		//Actions: make(map[string]*Link),
 	}
-
-	/*
-		header := make(map[string]string)
-		header["Accept"] = contentMediaType
-
-		if download {
-			rep.Actions["download"] = &Link{
-				Href:   o.DownloadLink(),
-				Header: header,
-			}
-		}
-
-		if upload {
-			rep.Actions["upload"] = &Link{
-				Href:   o.UploadLink(),
-				Header: header,
-			}
-		}
-	*/
-
-	//return rep
 }

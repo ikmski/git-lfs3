@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/ikmski/git-lfs3/usecase"
 )
@@ -10,6 +11,33 @@ const (
 	contentMediaType = "application/vnd.git-lfs"
 	metaMediaType    = contentMediaType + "+json"
 )
+
+// BatchResponse is ...
+type BatchResponse struct {
+	Transfer string            `json:"transfer,omitempty"`
+	Objects  []*ResponseObject `json:"objects"`
+}
+
+// ResponseObject is ...
+type ResponseObject struct {
+	Oid     string           `json:"oid"`
+	Size    int64            `json:"size"`
+	Actions map[string]*Link `json:"actions"`
+	Error   *ObjectError     `json:"error,omitempty"`
+}
+
+// Link is ...
+type Link struct {
+	Href      string            `json:"href"`
+	Header    map[string]string `json:"header,omitempty"`
+	ExpiresAt time.Time         `json:"expires_at,omitempty"`
+}
+
+// ObjectError is ...
+type ObjectError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
 
 // BatchController is ...
 type BatchController interface {
@@ -31,11 +59,13 @@ func (c *batchController) Batch(ctx Context) {
 
 	req := parseBatchRequest(ctx)
 
-	res, err := c.BatchService.Batch(req)
+	result, err := c.BatchService.Batch(req)
 
 	if err != nil {
 
 	}
+
+	res := convertBatchResponse(result)
 
 	json, err := json.Marshal(res)
 	if err != nil {
@@ -66,4 +96,42 @@ func parseBatchRequest(ctx Context) *usecase.BatchRequest {
 	}
 
 	return &br
+}
+
+func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
+
+	var objs []*ResponseObject
+
+	res := &BatchResponse{
+		Transfer: "basic",
+		Objects:  objs,
+	}
+
+	for _, batchObj := range result.Objects {
+
+		header := make(map[string]string)
+		header["Accept"] = contentMediaType
+
+		obj := &ResponseObject{}
+
+		if batchObj.MetaExists {
+
+		}
+
+		if batchObj.ObjectExists {
+			obj.Actions["download"] = &Link{
+				Href:   "https://hoge",
+				Header: header,
+			}
+		} else {
+			obj.Actions["upload"] = &Link{
+				Href:   "https://hoge",
+				Header: header,
+			}
+		}
+
+		objs = append(objs, obj)
+	}
+
+	return res
 }
