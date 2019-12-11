@@ -15,19 +15,17 @@ all: build
 .PHONY: setup
 ## setup
 setup:
-	go get -u github.com/golang/lint
-	go get -u github.com/golang/dep/cmd/dep
 	go get -u github.com/Songmu/make2help/cmd/make2help
 
 .PHONY: install-deps
 ## install dependencies
 install-deps: setup
-	dep ensure
+	go mod download
 
 .PHONY: update-deps
 ## update dependencies
 update-deps: setup
-	dep ensure -update
+	go mod tidy
 
 .PHONY: test
 ## run tests
