@@ -12,6 +12,28 @@ const (
 	metaMediaType    = contentMediaType + "+json"
 )
 
+// BatchRequest is ...
+type BatchRequest struct {
+	Operation string           `json:"operation"`
+	Transfers []string         `json:"transfers,omitempty"`
+	Ref       Ref              `json:"ref,omitempty"`
+	Objects   []*ObjectRequest `json:"objects"`
+}
+
+// ObjectRequest is ...
+type ObjectRequest struct {
+	Oid      string `json:"oid"`
+	Size     int64  `json:"size"`
+	User     string
+	Password string
+	Repo     string
+}
+
+// Ref is ...
+type Ref struct {
+	Name string `json:"name"`
+}
+
 // BatchResponse is ...
 type BatchResponse struct {
 	Transfer string            `json:"transfer,omitempty"`
@@ -78,16 +100,16 @@ func (c *batchController) Batch(ctx Context) {
 
 func parseBatchRequest(ctx Context) *usecase.BatchRequest {
 
-	var br usecase.BatchRequest
+	var br BatchRequest
 
 	data, err := ctx.GetRawData()
 	if err != nil {
-		return &br
+		return convertBatchRequest(&br)
 	}
 
 	err = json.Unmarshal(data, &br)
 	if err != nil {
-		return &br
+		return convertBatchRequest(&br)
 	}
 
 	for i := 0; i < len(br.Objects); i++ {
@@ -95,7 +117,7 @@ func parseBatchRequest(ctx Context) *usecase.BatchRequest {
 		br.Objects[i].Repo = ctx.Param("repo")
 	}
 
-	return &br
+		return convertBatchRequest(&br)
 }
 
 func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
@@ -134,4 +156,31 @@ func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
 	}
 
 	return res
+}
+
+func convertBatchRequest(req *BatchRequest) *usecase.BatchRequest {
+
+    var objs []*usecase.ObjectRequest
+
+    for _, o := range req.Objects {
+
+        item := &usecase.ObjectRequest {
+            Oid: o.Oid,
+            Size: o.Size,
+            User: o.User,
+            Password: o.Password,
+            Repo: o.Repo,
+        }
+
+        objs = append(objs, item)
+    }
+
+    br := &usecase.BatchRequest {
+        Operation: req.Operation,
+        Transfers: req.Transfers,
+        Ref: req.Ref.Name,
+        Objects: objs,
+    }
+
+    return br
 }

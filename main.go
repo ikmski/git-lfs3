@@ -2,11 +2,15 @@ package main
 
 import (
 	"log"
+	"time"
 
+    "github.com/aws/aws-sdk-go/aws/session"
+
+	"github.com/boltdb/bolt"
 	"github.com/BurntSushi/toml"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/ikmski/git-lfs3/api"
+	"github.com/ikmski/git-lfs3/adapter"
+	"github.com/ikmski/git-lfs3/usecase"
 )
 
 var config globalConfig
@@ -24,27 +28,47 @@ func main() {
 		log.Fatal(err)
 	}
 
-	metaStore, err := NewMetaStore(config.Database.MetaDB)
+    apiConfig := convertToApiConfig(&config.Server)
+
+    sess, err := session.NewSession()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	credentials := credentials.NewStaticCredentials(
-		config.S3.AwsAccessKeyID,
-		config.S3.AwsSecretAccessKey,
-		"")
-
-	sess := session.Must(session.NewSession(&aws.Config{
-		Credentials: credentials,
-		Region:      aws.String(config.S3.Region),
-	}))
-
-	contentStore, err := NewContentStore(sess, config.S3.Bucket)
+	db, err := bolt.Open("meta.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	app := newApp(metaStore, contentStore)
+    metaDataRepo := adapter.NewMetaDataRepository(db)
+    contentRepo, err := adapter.NewContentRepository(sess, "test")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+    batchService := usecase.NewBatchService(metaDataRepo, contentRepo)
+    transferService := usecase.NewTransferService(contentRepo)
+
+    batchController := adapter.NewBatchController(batchService)
+    transferController := adapter.NewTransferController(transferService)
+
+    batchHandler := api.NewBatchHandler(batchController)
+    transferHandler := api.NewTransferHandler(transferController)
+
+	app := api.NewAPI(apiConfig, batchHandler, transferHandler)
 
 	app.Serve()
+}
+
+func convertToApiConfig(conf *serverConfig) *api.Config {
+
+    c := &api.Config {
+        Tls: conf.Tls,
+        Port: conf.Port,
+        Host: conf.Host,
+        CertFile: conf.CertFile,
+        KeyFile: conf.KeyFile,
+    }
+
+    return c
 }

@@ -9,20 +9,34 @@ import (
 
 // API is ...
 type API struct {
+    config *Config
 	router *gin.Engine
 }
 
-// NewAPI is ...
-func NewAPI() *API {
+type Config struct {
+	Tls      bool
+	Port     int
+	Host     string
+	CertFile string
+	KeyFile  string
+}
 
-	api := &App
+// NewAPI is ...
+func NewAPI(
+    conf *Config,
+    batchHandler BatchHandler,
+    transferHandler TransferHandler) *API {
+
+	api := &API{
+        config: conf,
+    }
 
 	r := gin.Default()
 
-	r.POST("/:user/:repo/objects/batch", batchHandler)
+	r.POST("/:user/:repo/objects/batch", func (c *gin.Context) { batchHandler.Batch(c) })
 
-	r.GET("/:user/:repo/objects/:oid", downloadHandler)
-	r.PUT("/:user/:repo/objects/:oid", uploadHandler)
+	r.GET("/:user/:repo/objects/:oid", func (c *gin.Context) { transferHandler.Download(c) })
+	r.PUT("/:user/:repo/objects/:oid", func (c *gin.Context) { transferHandler.Upload(c) })
 
 	api.router = r
 
@@ -37,12 +51,12 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Serve is ...
 func (a *API) Serve() error {
 
-	if config.Server.Tls {
+	if a.config.Tls {
 		return a.router.RunTLS(
-			fmt.Sprintf(":%d", config.Server.Port),
-			config.Server.CertFile,
-			config.Server.KeyFile)
+			fmt.Sprintf(":%d", a.config.Port),
+			a.config.CertFile,
+			a.config.KeyFile)
 	}
 
-	return a.router.Run(fmt.Sprintf(":%d", config.Server.Port))
+	return a.router.Run(fmt.Sprintf(":%d", a.config.Port))
 }

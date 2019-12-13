@@ -16,46 +16,6 @@ type ObjectRequest struct {
 	Repo     string
 }
 
-type BatchRequest struct {
-	Operation string           `json:"operation"`
-	Transfers []string         `json:"transfers,omitempty"`
-	Ref       Ref              `json:"ref,omitempty"`
-	Objects   []*ObjectRequest `json:"objects"`
-}
-
-type ObjectMetaData struct {
-	Oid      string `json:"oid"`
-	Size     int64  `json:"size"`
-	Existing bool
-}
-
-type BatchResponse struct {
-	Transfer string            `json:"transfer,omitempty"`
-	Objects  []*ResponseObject `json:"objects"`
-}
-
-type ResponseObject struct {
-	Oid     string           `json:"oid"`
-	Size    int64            `json:"size"`
-	Actions map[string]*Link `json:"actions"`
-	Error   *ObjectError     `json:"error,omitempty"`
-}
-
-type Ref struct {
-	Name string `json:"name"`
-}
-
-type Link struct {
-	Href      string            `json:"href"`
-	Header    map[string]string `json:"header,omitempty"`
-	ExpiresAt time.Time         `json:"expires_at,omitempty"`
-}
-
-type ObjectError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 type User struct {
 	Name string `json:"name"`
 }
