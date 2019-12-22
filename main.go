@@ -4,12 +4,12 @@ import (
 	"log"
 	"time"
 
-    "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/aws/session"
 
-	"github.com/boltdb/bolt"
 	"github.com/BurntSushi/toml"
-	"github.com/ikmski/git-lfs3/api"
+	"github.com/boltdb/bolt"
 	"github.com/ikmski/git-lfs3/adapter"
+	"github.com/ikmski/git-lfs3/api"
 	"github.com/ikmski/git-lfs3/usecase"
 )
 
@@ -28,9 +28,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-    apiConfig := convertToApiConfig(&config.Server)
+	apiConfig := convertToApiConfig(&config.Server)
 
-    sess, err := session.NewSession()
+	sess, err := session.NewSession()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,20 +40,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-    metaDataRepo := adapter.NewMetaDataRepository(db)
-    contentRepo, err := adapter.NewContentRepository(sess, "test")
+	metaDataRepo := adapter.NewMetaDataRepository(db)
+	contentRepo, err := adapter.NewContentRepository(sess, "test")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-    batchService := usecase.NewBatchService(metaDataRepo, contentRepo)
-    transferService := usecase.NewTransferService(contentRepo)
+	batchService := usecase.NewBatchService(metaDataRepo, contentRepo)
+	transferService := usecase.NewTransferService(metaDataRepo, contentRepo)
 
-    batchController := adapter.NewBatchController(batchService)
-    transferController := adapter.NewTransferController(transferService)
+	batchController := adapter.NewBatchController(batchService)
+	transferController := adapter.NewTransferController(transferService)
 
-    batchHandler := api.NewBatchHandler(batchController)
-    transferHandler := api.NewTransferHandler(transferController)
+	batchHandler := api.NewBatchHandler(batchController)
+	transferHandler := api.NewTransferHandler(transferController)
 
 	app := api.NewAPI(apiConfig, batchHandler, transferHandler)
 
@@ -62,13 +62,13 @@ func main() {
 
 func convertToApiConfig(conf *serverConfig) *api.Config {
 
-    c := &api.Config {
-        Tls: conf.Tls,
-        Port: conf.Port,
-        Host: conf.Host,
-        CertFile: conf.CertFile,
-        KeyFile: conf.KeyFile,
-    }
+	c := &api.Config{
+		Tls:      conf.Tls,
+		Port:     conf.Port,
+		Host:     conf.Host,
+		CertFile: conf.CertFile,
+		KeyFile:  conf.KeyFile,
+	}
 
-    return c
+	return c
 }

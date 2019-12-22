@@ -2,39 +2,39 @@ package usecase
 
 import (
 	"io"
-
-	"github.com/ikmski/git-lfs3/entity"
 )
 
 type transferService struct {
-	ContentRepository ContentRepository
+	ContentRepository  ContentRepository
+	MetaDataRepository MetaDataRepository
 }
 
 // TransferService is ...
 type TransferService interface {
-	Download(meta *entity.MetaData, w io.Writer) (int64, error)
-	Upload(meta *entity.MetaData, r io.Reader) error
-	Exists(meta *entity.MetaData) bool
+	Download(req *ObjectRequest, w io.Writer) (int64, error)
+	Upload(req *ObjectRequest, r io.Reader) error
+	Exists(req *ObjectRequest) bool
 }
 
 // NewTransferService is ...
-func NewTransferService(repo ContentRepository) TransferService {
+func NewTransferService(metaDataRepo MetaDataRepository, contentRepo ContentRepository) TransferService {
 	return &transferService{
-		ContentRepository: repo,
+		ContentRepository:  contentRepo,
+		MetaDataRepository: metaDataRepo,
 	}
 }
 
-func (s *transferService) Download(meta *entity.MetaData, w io.Writer) (int64, error) {
+func (s *transferService) Download(req *ObjectRequest, w io.Writer) (int64, error) {
 
 	return 0, nil
 }
 
-func (s *transferService) Upload(meta *entity.MetaData, r io.Reader) error {
+func (s *transferService) Upload(req *ObjectRequest, r io.Reader) error {
 
 	return nil
 }
 
-func (s *transferService) Exists(meta *entity.MetaData) bool {
+func (s *transferService) Exists(req *ObjectRequest) bool {
 
 	return false
 }

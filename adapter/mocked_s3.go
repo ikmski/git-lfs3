@@ -1,4 +1,4 @@
-package main
+package adapter
 
 import (
 	"bytes"
@@ -137,10 +137,10 @@ func (mu MockedUploader) Upload(input *s3manager.UploadInput, options ...func(*s
 	return &s3manager.UploadOutput{}, nil
 }
 
-func NewMockedContentStore(bucket string) (*ContentStore, error) {
+func NewMockedContentRepository(bucket string) (*contentRepository, error) {
 
 	mockedDataStore = make(map[string]*MockedS3Data)
-	contentStore := &ContentStore{
+	contentStore := &contentRepository{
 		s3:         MockedS3{},
 		downloader: MockedDownloader{},
 		uploader:   MockedUploader{},

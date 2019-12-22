@@ -7,4 +7,5 @@ type Context interface {
 	Status(int)
 	Header(string, string)
 	JSON(int, interface{})
+	GetHeader(string) string
 }
