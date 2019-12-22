@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/ikmski/git-lfs3/entity"
 )
 
 func TestDownload(t *testing.T) {
@@ -108,11 +110,11 @@ func TestUpload(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(fileName)
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}
-	_, err = testContentStore.Get(m, f, "")
+	_, err = testContentRepo.Get(m, f, "")
 	if err != nil {
 		t.Fatalf("error retreiving from content store: %s", err)
 	}

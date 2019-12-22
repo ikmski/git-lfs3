@@ -4,12 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-
 	"github.com/BurntSushi/toml"
 	"github.com/boltdb/bolt"
 	"github.com/ikmski/git-lfs3/adapter"
-	"github.com/ikmski/git-lfs3/api"
 	"github.com/ikmski/git-lfs3/usecase"
 )
 
@@ -28,20 +25,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	apiConfig := convertToApiConfig(&config.Server)
-
-	sess, err := session.NewSession()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	db, err := bolt.Open("meta.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	metaDataRepo := adapter.NewMetaDataRepository(db)
-	contentRepo, err := adapter.NewContentRepository(sess, "test")
+	contentRepo, err := adapter.NewContentRepository("test")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,23 +42,7 @@ func main() {
 	batchController := adapter.NewBatchController(batchService)
 	transferController := adapter.NewTransferController(transferService)
 
-	batchHandler := api.NewBatchHandler(batchController)
-	transferHandler := api.NewTransferHandler(transferController)
-
-	app := api.NewAPI(apiConfig, batchHandler, transferHandler)
+	app := newApp(config.Server, batchController, transferController)
 
 	app.Serve()
-}
-
-func convertToApiConfig(conf *serverConfig) *api.Config {
-
-	c := &api.Config{
-		Tls:      conf.Tls,
-		Port:     conf.Port,
-		Host:     conf.Host,
-		CertFile: conf.CertFile,
-		KeyFile:  conf.KeyFile,
-	}
-
-	return c
 }

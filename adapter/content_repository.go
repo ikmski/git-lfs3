@@ -31,7 +31,12 @@ type contentRepository struct {
 	bucket     string
 }
 
-func NewContentRepository(sess *session.Session, bucket string) (usecase.ContentRepository, error) {
+func NewContentRepository(bucket string) (usecase.ContentRepository, error) {
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, err
+	}
 
 	c := &contentRepository{
 		s3:         s3.New(sess),

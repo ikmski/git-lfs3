@@ -30,7 +30,7 @@ update-deps: setup
 .PHONY: test
 ## run tests
 test:
-	go test -v
+	go test -v github.com/ikmski/git-lfs3/...
 
 .PHONY: lint
 ## lint

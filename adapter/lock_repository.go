@@ -24,6 +24,7 @@ type lockRepository struct {
 
 // NewLockRepository is ...
 func NewLockRepository(db *bolt.DB) usecase.LockRepository {
+
 	return &lockRepository{db: db}
 }
 

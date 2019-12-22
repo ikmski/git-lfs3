@@ -20,6 +20,7 @@ type metaDataRepository struct {
 
 // NewMetaDataRepository is ...
 func NewMetaDataRepository(db *bolt.DB) usecase.MetaDataRepository {
+
 	return &metaDataRepository{db: db}
 }
 
