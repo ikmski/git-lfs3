@@ -33,8 +33,8 @@ func TestBatchDownload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", metaMediaType)
-	req.Header.Set("Content-Type", metaMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -95,8 +95,8 @@ func TestBatchUpload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", metaMediaType)
-	req.Header.Set("Content-Type", metaMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

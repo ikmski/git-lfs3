@@ -85,7 +85,7 @@ func TestAddLocks(t *testing.T) {
 		t.Errorf("expected lock to be existed")
 	}
 	if locks[0].ID != testLockID {
-		t.Errorf("expected lockId to match, got: %s", locks[0])
+		t.Errorf("expected lockId to match, got: %v", locks[0])
 	}
 }
 
@@ -104,7 +104,7 @@ func TestDeleteLock(t *testing.T) {
 		t.Errorf("expected DeleteLock to succeed, got : %s", err)
 	}
 	if deleted == nil || deleted.ID != lock.ID {
-		t.Errorf("expected deleted lock to be returned, got : %s", deleted)
+		t.Errorf("expected deleted lock to be returned, got : %v", deleted)
 	}
 }
 
@@ -143,7 +143,7 @@ func TestDeleteLockNotOwnerForce(t *testing.T) {
 		t.Errorf("expected DeleteLock(force) to succeed, got : %s", err)
 	}
 	if deleted == nil || deleted.ID != lock.ID {
-		t.Errorf("expected deleted lock to be returned, got : %s", deleted)
+		t.Errorf("expected deleted lock to be returned, got : %v", deleted)
 	}
 }
 
@@ -162,7 +162,7 @@ func TestDeleteLockNonExisting(t *testing.T) {
 		t.Errorf("expected DeleteLock to succeed, got : %s", err)
 	}
 	if deleted != nil {
-		t.Errorf("expected nil returned, got : %s", deleted)
+		t.Errorf("expected nil returned, got : %v", deleted)
 	}
 }
 
@@ -174,7 +174,7 @@ func NewTestLock(id, path, user string) entity.Lock {
 		Owner: entity.User{
 			Name: user,
 		},
-		LockedAt: time.Now(),
+		LockedAt: time.Now().Unix(),
 	}
 }
 

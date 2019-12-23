@@ -18,7 +18,7 @@ func TestDownload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", contentMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -46,7 +46,7 @@ func TestDownloadWithRange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", contentMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs")
 
 	fromByte := 5
 	req.Header.Set("Range", fmt.Sprintf("bytes=%d-", fromByte))
@@ -88,7 +88,7 @@ func TestUpload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", contentMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs")
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(testContent)))
 
@@ -114,7 +114,7 @@ func TestUpload(t *testing.T) {
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}
-	_, err = testContentRepo.Get(m, f, "")
+	_, err = testContentRepo.Get(m, f, 0, 0)
 	if err != nil {
 		t.Fatalf("error retreiving from content store: %s", err)
 	}

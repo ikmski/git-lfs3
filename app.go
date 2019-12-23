@@ -39,8 +39,7 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.router.ServeHTTP(w, r)
 }
 
-// Serve is ...
-func (a *app) Serve() error {
+func (a *app) serve() error {
 
 	if a.config.Tls {
 		return a.router.RunTLS(

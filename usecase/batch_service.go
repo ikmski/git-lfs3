@@ -38,7 +38,7 @@ func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 		// Object is not found
 		meta, err = c.MetaDataRepository.Put(obj)
 		if err == nil {
-			objectResult := createObjectResult(obj, meta, meta.Existing, false)
+			objectResult := createObjectResult(obj, meta, true, false)
 			objectResults = append(objectResults, objectResult)
 		}
 	}

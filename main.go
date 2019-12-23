@@ -10,30 +10,37 @@ import (
 	"github.com/ikmski/git-lfs3/usecase"
 )
 
-var config globalConfig
-
 const (
-	configFileName   = "config.toml"
-	contentMediaType = "application/vnd.git-lfs"
-	metaMediaType    = contentMediaType + "+json"
+	configFileName = "config.toml"
 )
 
 func main() {
 
+	var config globalConfig
 	_, err := toml.DecodeFile(configFileName, &config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db, err := bolt.Open("meta.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
+	app, err := initializeApp(config)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	app.serve()
+}
+
+func initializeApp(config globalConfig) (*app, error) {
+
+	db, err := bolt.Open("meta.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
+	if err != nil {
+		return nil, err
 	}
 
 	metaDataRepo := adapter.NewMetaDataRepository(db)
 	contentRepo, err := adapter.NewContentRepository("test")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	batchService := usecase.NewBatchService(metaDataRepo, contentRepo)
@@ -44,5 +51,5 @@ func main() {
 
 	app := newApp(config.Server, batchController, transferController)
 
-	app.Serve()
+	return app, nil
 }

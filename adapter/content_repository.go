@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -38,39 +39,44 @@ func NewContentRepository(bucket string) (usecase.ContentRepository, error) {
 		return nil, err
 	}
 
-	c := &contentRepository{
+	r := &contentRepository{
 		s3:         s3.New(sess),
 		downloader: s3manager.NewDownloader(sess),
 		uploader:   s3manager.NewUploader(sess),
 		bucket:     bucket,
 	}
 
-	return c, nil
+	return r, nil
 }
 
-func (s *contentRepository) Get(meta *entity.MetaData, w io.WriterAt, rangeHeader string) (int64, error) {
+func (r *contentRepository) Get(meta *entity.MetaData, w io.WriterAt, from int64, to int64) (int64, error) {
+
+	rangeHeader := ""
+	if from > 0 && to > from {
+		rangeHeader = fmt.Sprintf("bytes=%s-%s", strconv.FormatInt(from, 10), strconv.FormatInt(to, 10))
+	}
 
 	input := &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(r.bucket),
 		Key:    aws.String(transformKey(meta.Oid)),
 		Range:  &rangeHeader,
 	}
 
-	return s.downloader.Download(w, input)
+	return r.downloader.Download(w, input)
 }
 
-func (s *contentRepository) Put(meta *entity.MetaData, r io.Reader) error {
+func (r *contentRepository) Put(meta *entity.MetaData, reader io.Reader) error {
 
 	hash := sha256.New()
-	tee := io.TeeReader(r, hash)
+	tee := io.TeeReader(reader, hash)
 
 	uploadInput := &s3manager.UploadInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(r.bucket),
 		Key:    aws.String(transformKey(meta.Oid)),
 		Body:   tee,
 	}
 
-	_, err := s.uploader.Upload(uploadInput)
+	_, err := r.uploader.Upload(uploadInput)
 	if err != nil {
 		aerr, ok := err.(awserr.Error)
 		if ok {
@@ -85,11 +91,11 @@ func (s *contentRepository) Put(meta *entity.MetaData, r io.Reader) error {
 	}
 
 	headInput := &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(r.bucket),
 		Key:    aws.String(transformKey(meta.Oid)),
 	}
 
-	result, err := s.s3.HeadObject(headInput)
+	result, err := r.s3.HeadObject(headInput)
 	if err != nil {
 		aerr, ok := err.(awserr.Error)
 		if ok {
@@ -115,14 +121,14 @@ func (s *contentRepository) Put(meta *entity.MetaData, r io.Reader) error {
 	return nil
 }
 
-func (s *contentRepository) Exists(meta *entity.MetaData) bool {
+func (r *contentRepository) Exists(meta *entity.MetaData) bool {
 
 	input := &s3.HeadObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(r.bucket),
 		Key:    aws.String(transformKey(meta.Oid)),
 	}
 
-	_, err := s.s3.HeadObject(input)
+	_, err := r.s3.HeadObject(input)
 	if err != nil {
 		aerr, ok := err.(awserr.Error)
 		if ok {

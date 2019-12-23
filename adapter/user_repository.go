@@ -18,13 +18,25 @@ type userRepository struct {
 
 // NewUserRepository is ...
 func NewUserRepository(db *bolt.DB) usecase.UserRepository {
+
+	db.Update(func(tx *bolt.Tx) error {
+
+		_, err := tx.CreateBucketIfNotExists(usersBucket)
+		if err != nil {
+			return err
+		}
+		return nil
+
+	})
+
 	return &userRepository{db: db}
 }
 
 // AddUser adds user credentials to the meta store.
-func (s *userRepository) AddUser(user, pass string) error {
+func (r *userRepository) AddUser(user, pass string) error {
 
-	err := s.db.Update(func(tx *bolt.Tx) error {
+	err := r.db.Update(func(tx *bolt.Tx) error {
+
 		bucket := tx.Bucket(usersBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
@@ -41,9 +53,10 @@ func (s *userRepository) AddUser(user, pass string) error {
 }
 
 // DeleteUser removes user credentials from the meta store.
-func (s *userRepository) DeleteUser(user string) error {
+func (r *userRepository) DeleteUser(user string) error {
 
-	err := s.db.Update(func(tx *bolt.Tx) error {
+	err := r.db.Update(func(tx *bolt.Tx) error {
+
 		bucket := tx.Bucket(usersBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
@@ -57,18 +70,22 @@ func (s *userRepository) DeleteUser(user string) error {
 }
 
 // Users returns all MetaUsers in the meta store
-func (s *userRepository) Users() ([]*entity.User, error) {
+func (r *userRepository) Users() ([]*entity.User, error) {
 
 	var users []*entity.User
 
-	err := s.db.View(func(tx *bolt.Tx) error {
+	err := r.db.View(func(tx *bolt.Tx) error {
+
 		bucket := tx.Bucket(usersBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
 		}
 
 		bucket.ForEach(func(k, v []byte) error {
-			users = append(users, &entity.User{string(k)})
+			u := &entity.User{
+				Name: string(k),
+			}
+			users = append(users, u)
 			return nil
 		})
 		return nil

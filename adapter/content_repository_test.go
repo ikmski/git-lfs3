@@ -165,7 +165,7 @@ func TestContentStoreGet(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(fileName)
 
-	_, err = testContentRepository.Get(m, f, "")
+	_, err = testContentRepository.Get(m, f, 0, 0)
 	if err != nil {
 		t.Fatalf("expected get to succeed, got: %s", err)
 	}

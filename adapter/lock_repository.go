@@ -25,13 +25,24 @@ type lockRepository struct {
 // NewLockRepository is ...
 func NewLockRepository(db *bolt.DB) usecase.LockRepository {
 
+	db.Update(func(tx *bolt.Tx) error {
+
+		_, err := tx.CreateBucketIfNotExists(locksBucket)
+		if err != nil {
+			return err
+		}
+		return nil
+
+	})
+
 	return &lockRepository{db: db}
 }
 
 // AddLocks write locks to the store for the repo.
-func (s *lockRepository) AddLocks(repo string, l ...entity.Lock) error {
+func (r *lockRepository) AddLocks(repo string, l ...entity.Lock) error {
 
-	err := s.db.Update(func(tx *bolt.Tx) error {
+	err := r.db.Update(func(tx *bolt.Tx) error {
+
 		bucket := tx.Bucket(locksBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
@@ -57,10 +68,11 @@ func (s *lockRepository) AddLocks(repo string, l ...entity.Lock) error {
 }
 
 // Locks retrieves locks for the repo from the store
-func (s *lockRepository) Locks(repo string) ([]entity.Lock, error) {
+func (r *lockRepository) Locks(repo string) ([]entity.Lock, error) {
 
 	var locks []entity.Lock
-	err := s.db.View(func(tx *bolt.Tx) error {
+	err := r.db.View(func(tx *bolt.Tx) error {
+
 		bucket := tx.Bucket(locksBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
@@ -78,9 +90,9 @@ func (s *lockRepository) Locks(repo string) ([]entity.Lock, error) {
 }
 
 // FilteredLocks return filtered locks for the repo
-func (s *lockRepository) FilteredLocks(repo, path, cursor, limit string) (locks []entity.Lock, next string, err error) {
+func (r *lockRepository) FilteredLocks(repo, path, cursor, limit string) (locks []entity.Lock, next string, err error) {
 
-	locks, err = s.Locks(repo)
+	locks, err = r.Locks(repo)
 	if err != nil {
 		return
 	}
@@ -133,10 +145,11 @@ func (s *lockRepository) FilteredLocks(repo, path, cursor, limit string) (locks 
 }
 
 // DeleteLock removes lock for the repo by id from the store
-func (s *lockRepository) DeleteLock(repo, user, id string, force bool) (*entity.Lock, error) {
+func (r *lockRepository) DeleteLock(repo, user, id string, force bool) (*entity.Lock, error) {
 
 	var deleted *entity.Lock
-	err := s.db.Update(func(tx *bolt.Tx) error {
+	err := r.db.Update(func(tx *bolt.Tx) error {
+
 		bucket := tx.Bucket(locksBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
@@ -188,7 +201,7 @@ func (c LocksByCreatedAt) Len() int {
 }
 
 func (c LocksByCreatedAt) Less(i, j int) bool {
-	return c[i].LockedAt.Before(c[j].LockedAt)
+	return c[i].LockedAt < c[j].LockedAt
 }
 
 func (c LocksByCreatedAt) Swap(i, j int) {

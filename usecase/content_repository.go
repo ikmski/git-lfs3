@@ -8,7 +8,7 @@ import (
 
 // ContentRepository is ...
 type ContentRepository interface {
-	Get(meta *entity.MetaData, w io.WriterAt, rangeHeader string) (int64, error)
+	Get(meta *entity.MetaData, w io.WriterAt, from int64, to int64) (int64, error)
 	Put(meta *entity.MetaData, r io.Reader) error
 	Exists(meta *entity.MetaData) bool
 }
