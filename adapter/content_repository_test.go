@@ -1,4 +1,4 @@
-package main
+package adapter
 
 import (
 	"bytes"
@@ -12,9 +12,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
+	"github.com/ikmski/git-lfs3/entity"
+	"github.com/ikmski/git-lfs3/usecase"
 )
 
-var contentStore *ContentStore
+var testContentRepository usecase.ContentRepository
 
 type TestS3 struct {
 	s3iface.S3API
@@ -58,7 +60,7 @@ func TestContentStorePut(t *testing.T) {
 	b := bytes.NewBuffer([]byte("test content"))
 	var contentSize int64 = 12
 
-	contentStore = &ContentStore{
+	testContentRepository = &contentRepository{
 		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
 				ContentLength: &contentSize,
@@ -69,12 +71,12 @@ func TestContentStorePut(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: contentSize,
 	}
 
-	err := contentStore.Put(m, b)
+	err := testContentRepository.Put(m, b)
 	if err != nil {
 		t.Fatalf("expected put to succeed, got: %s", err)
 	}
@@ -84,7 +86,7 @@ func TestContentStorePutHashMismatch(t *testing.T) {
 
 	var contentSize int64 = 12
 
-	contentStore = &ContentStore{
+	testContentRepository = &contentRepository{
 		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
 				ContentLength: &contentSize,
@@ -95,14 +97,14 @@ func TestContentStorePutHashMismatch(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: contentSize,
 	}
 
 	b := bytes.NewBuffer([]byte("bogus content"))
 
-	err := contentStore.Put(m, b)
+	err := testContentRepository.Put(m, b)
 	if err == nil {
 		t.Fatal("expected put with bogus content to fail")
 	}
@@ -112,7 +114,7 @@ func TestContentStorePutSizeMismatch(t *testing.T) {
 
 	var contentSize int64 = 12
 
-	contentStore = &ContentStore{
+	testContentRepository = &contentRepository{
 		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
 				ContentLength: &contentSize,
@@ -123,14 +125,14 @@ func TestContentStorePutSizeMismatch(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 14,
 	}
 
 	b := bytes.NewBuffer([]byte("test content"))
 
-	err := contentStore.Put(m, b)
+	err := testContentRepository.Put(m, b)
 	if err == nil {
 		t.Fatal("expected put with bogus size to fail")
 	}
@@ -140,7 +142,7 @@ func TestContentStoreGet(t *testing.T) {
 
 	b := bytes.NewBuffer([]byte("test content"))
 
-	contentStore = &ContentStore{
+	testContentRepository = &contentRepository{
 		s3: TestS3{},
 		downloader: TestDownloader{
 			content: b,
@@ -149,7 +151,7 @@ func TestContentStoreGet(t *testing.T) {
 		bucket:   "test_bucket",
 	}
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}
@@ -163,7 +165,7 @@ func TestContentStoreGet(t *testing.T) {
 	defer f.Close()
 	defer os.Remove(fileName)
 
-	_, err = contentStore.Get(m, f, "")
+	_, err = testContentRepository.Get(m, f, 0, 0)
 	if err != nil {
 		t.Fatalf("expected get to succeed, got: %s", err)
 	}
@@ -176,7 +178,7 @@ func TestContentStoreGet(t *testing.T) {
 
 func TestContenStoreNotExists(t *testing.T) {
 
-	contentStore = &ContentStore{
+	testContentRepository = &contentRepository{
 		s3: TestS3{
 			err: errors.New("error"),
 		},
@@ -185,31 +187,31 @@ func TestContenStoreNotExists(t *testing.T) {
 		bucket:     "test_bucket",
 	}
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}
 
-	if contentStore.Exists(m) {
+	if testContentRepository.Exists(m) {
 		t.Fatalf("expected to get an error, but content existed")
 	}
 }
 
 func TestContentStoreExists(t *testing.T) {
 
-	contentStore = &ContentStore{
+	testContentRepository = &contentRepository{
 		s3:         TestS3{},
 		downloader: TestDownloader{},
 		uploader:   TestUploader{},
 		bucket:     "test_bucket",
 	}
 
-	m := &ObjectMetaData{
+	m := &entity.MetaData{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}
 
-	if !contentStore.Exists(m) {
+	if !testContentRepository.Exists(m) {
 		t.Fatalf("expected content to exist")
 	}
 }

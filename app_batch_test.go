@@ -7,20 +7,22 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/ikmski/git-lfs3/adapter"
 )
 
 func TestBatchDownload(t *testing.T) {
 
 	path := fmt.Sprintf("%s/%s/%s/objects/batch", lfsServer.URL, testUser1, testRepo)
 
-	var objs []*ObjectRequest
-	obj := &ObjectRequest{
+	var objs []*adapter.ObjectRequest
+	obj := &adapter.ObjectRequest{
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}
 	objs = append(objs, obj)
 
-	requestData := &BatchRequest{
+	requestData := &adapter.BatchRequest{
 		Operation: "download",
 		Objects:   objs,
 	}
@@ -31,8 +33,8 @@ func TestBatchDownload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", metaMediaType)
-	req.Header.Set("Content-Type", metaMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -48,7 +50,7 @@ func TestBatchDownload(t *testing.T) {
 		t.Fatalf("expected response to contain content, got error: %s", err)
 	}
 
-	var responseData BatchResponse
+	var responseData adapter.BatchResponse
 	err = json.Unmarshal(responseBody, &responseData)
 	if err != nil {
 		t.Fatalf("got error: %s", err)
@@ -75,14 +77,14 @@ func TestBatchUpload(t *testing.T) {
 
 	path := fmt.Sprintf("%s/%s/%s/objects/batch", lfsServer.URL, testUser1, testRepo)
 
-	var objs []*ObjectRequest
-	obj := &ObjectRequest{
+	var objs []*adapter.ObjectRequest
+	obj := &adapter.ObjectRequest{
 		Oid:  testContentOid,
 		Size: testContentSize,
 	}
 	objs = append(objs, obj)
 
-	requestData := &BatchRequest{
+	requestData := &adapter.BatchRequest{
 		Operation: "upload",
 		Objects:   objs,
 	}
@@ -93,8 +95,8 @@ func TestBatchUpload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request error: %s", err)
 	}
-	req.Header.Set("Accept", metaMediaType)
-	req.Header.Set("Content-Type", metaMediaType)
+	req.Header.Set("Accept", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -110,7 +112,7 @@ func TestBatchUpload(t *testing.T) {
 		t.Fatalf("expected response to contain content, got error: %s", err)
 	}
 
-	var responseData BatchResponse
+	var responseData adapter.BatchResponse
 	err = json.Unmarshal(responseBody, &responseData)
 	if err != nil {
 		t.Fatalf("got error: %s", err)

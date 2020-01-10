@@ -2,49 +2,54 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/boltdb/bolt"
+	"github.com/ikmski/git-lfs3/adapter"
+	"github.com/ikmski/git-lfs3/usecase"
 )
 
-var config globalConfig
-
 const (
-	configFileName   = "config.toml"
-	contentMediaType = "application/vnd.git-lfs"
-	metaMediaType    = contentMediaType + "+json"
+	configFileName = "config.toml"
 )
 
 func main() {
 
+	var config globalConfig
 	_, err := toml.DecodeFile(configFileName, &config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	metaStore, err := NewMetaStore(config.Database.MetaDB)
+	app, err := initializeApp(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	credentials := credentials.NewStaticCredentials(
-		config.S3.AwsAccessKeyID,
-		config.S3.AwsSecretAccessKey,
-		"")
+	app.serve()
+}
 
-	sess := session.Must(session.NewSession(&aws.Config{
-		Credentials: credentials,
-		Region:      aws.String(config.S3.Region),
-	}))
+func initializeApp(config globalConfig) (*app, error) {
 
-	contentStore, err := NewContentStore(sess, config.S3.Bucket)
+	db, err := bolt.Open("meta.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	app := newApp(metaStore, contentStore)
+	metaDataRepo := adapter.NewMetaDataRepository(db)
+	contentRepo, err := adapter.NewContentRepository("test")
+	if err != nil {
+		return nil, err
+	}
 
-	app.Serve()
+	batchService := usecase.NewBatchService(metaDataRepo, contentRepo)
+	transferService := usecase.NewTransferService(metaDataRepo, contentRepo)
+
+	batchController := adapter.NewBatchController(batchService)
+	transferController := adapter.NewTransferController(transferService)
+
+	app := newApp(config.Server, batchController, transferController)
+
+	return app, nil
 }
