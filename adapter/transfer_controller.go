@@ -32,7 +32,7 @@ func (c *transferController) Download(ctx Context) {
 
 	exists := c.transferService.Exists(o)
 	if !exists {
-		ctx.Status(404)
+		ctx.SetStatus(404)
 		return
 	}
 
@@ -52,14 +52,14 @@ func (c *transferController) Download(ctx Context) {
 			}
 		}
 
-		ctx.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", fromByte, toByte-1, int64(toByte-fromByte)))
-		ctx.Status(206)
+		ctx.SetHeader("Content-Range", fmt.Sprintf("bytes %d-%d/%d", fromByte, toByte-1, int64(toByte-fromByte)))
+		ctx.SetStatus(206)
 	}
 
 	buf := bytes.NewBuffer([]byte{})
 	_, err := c.transferService.Download(o, buf)
 	if err != nil {
-		ctx.Status(404)
+		ctx.SetStatus(404)
 		return
 	}
 }
@@ -69,14 +69,14 @@ func (c *transferController) Upload(ctx Context) {
 	o := parseObjectRequest(ctx)
 	exists := c.transferService.Exists(o)
 	if !exists {
-		ctx.Status(404)
+		ctx.SetStatus(404)
 		return
 	}
 
 	buf := bytes.NewBuffer([]byte{})
 	err := c.transferService.Upload(o, buf)
 	if err != nil {
-		ctx.Status(500)
+		ctx.SetStatus(500)
 		//fmt.Fprintf(c.Writer, `{"message":"%s"}`, err)
 		return
 	}
@@ -85,9 +85,9 @@ func (c *transferController) Upload(ctx Context) {
 func parseObjectRequest(ctx Context) *usecase.ObjectRequest {
 
 	or := &ObjectRequest{
-		User: ctx.Param("user"),
-		Repo: ctx.Param("repo"),
-		Oid:  ctx.Param("oid"),
+		User: ctx.GetParam("user"),
+		Repo: ctx.GetParam("repo"),
+		Oid:  ctx.GetParam("oid"),
 	}
 
 	return convertObjectRequest(or)

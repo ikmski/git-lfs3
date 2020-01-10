@@ -24,10 +24,10 @@ func newApp(
 
 	r := gin.Default()
 
-	r.POST("/:user/:repo/objects/batch", func(c *gin.Context) { batchController.Batch(c) })
+	r.POST("/:user/:repo/objects/batch", func(c *gin.Context) { batchController.Batch(newContext(c)) })
 
-	r.GET("/:user/:repo/objects/:oid", func(c *gin.Context) { transferController.Download(c) })
-	r.PUT("/:user/:repo/objects/:oid", func(c *gin.Context) { transferController.Upload(c) })
+	r.GET("/:user/:repo/objects/:oid", func(c *gin.Context) { transferController.Download(newContext(c)) })
+	r.PUT("/:user/:repo/objects/:oid", func(c *gin.Context) { transferController.Upload(newContext(c)) })
 
 	a.router = r
 

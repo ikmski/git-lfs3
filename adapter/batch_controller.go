@@ -44,8 +44,8 @@ func (c *batchController) Batch(ctx Context) {
 
 	}
 
-	ctx.Header("Content-Type", metaMediaType)
-	ctx.JSON(200, json)
+	ctx.SetHeader("Content-Type", metaMediaType)
+	ctx.SetJson(200, json)
 }
 
 func parseBatchRequest(ctx Context) *usecase.BatchRequest {
@@ -63,8 +63,8 @@ func parseBatchRequest(ctx Context) *usecase.BatchRequest {
 	}
 
 	for i := 0; i < len(br.Objects); i++ {
-		br.Objects[i].User = ctx.Param("user")
-		br.Objects[i].Repo = ctx.Param("repo")
+		br.Objects[i].User = ctx.GetParam("user")
+		br.Objects[i].Repo = ctx.GetParam("repo")
 	}
 
 	return convertBatchRequest(&br)
