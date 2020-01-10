@@ -42,6 +42,12 @@ type ResponseObject struct {
 	Error   *ObjectError     `json:"error,omitempty"`
 }
 
+func newResponseObject() *ResponseObject {
+	r := new(ResponseObject)
+	r.Actions = make(map[string]*Link)
+	return r
+}
+
 // Link is ...
 type Link struct {
 	Href      string            `json:"href"`
@@ -96,7 +102,7 @@ func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
 		header := make(map[string]string)
 		header["Accept"] = contentMediaType
 
-		obj := &ResponseObject{}
+		obj := newResponseObject()
 
 		if batchObj.MetaExists {
 

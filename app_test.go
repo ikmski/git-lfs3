@@ -50,6 +50,7 @@ func TestMain(m *testing.M) {
 	usersBucket := []byte("users")
 	objectsBucket := []byte("objects")
 	locksBucket := []byte("locks")
+
 	db.Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(usersBucket); err != nil {
 			return err
@@ -75,12 +76,14 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err := seedContentRepository(); err != nil {
+	err = seedContentRepository()
+	if err != nil {
 		fmt.Printf("Error seeding content store: %s", err)
 		os.Exit(1)
 	}
 
-	if err := seedMetaDataRepository(); err != nil {
+	err = seedMetaDataRepository()
+	if err != nil {
 		fmt.Printf("Error seeding meta store: %s", err)
 		os.Exit(1)
 	}
