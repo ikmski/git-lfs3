@@ -44,8 +44,7 @@ func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 	}
 
 	result := &BatchResult{
-		Transfer: "basic",
-		Objects:  objectResults,
+		Objects: objectResults,
 	}
 
 	return result, nil

@@ -84,13 +84,13 @@ func (c *transferController) Upload(ctx Context) {
 
 func parseObjectRequest(ctx Context) *usecase.ObjectRequest {
 
-	or := &ObjectRequest{
-		User: ctx.GetParam("user"),
-		Repo: ctx.GetParam("repo"),
-		Oid:  ctx.GetParam("oid"),
+	oid := ctx.GetParam("oid")
+
+	or := &usecase.ObjectRequest{
+		Oid: oid,
 	}
 
-	return convertObjectRequest(or)
+	return or
 }
 
 /*

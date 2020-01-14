@@ -29,10 +29,12 @@ func NewBatchController(s usecase.BatchService) BatchController {
 
 func (c *batchController) Batch(ctx Context) {
 
-	req := parseBatchRequest(ctx)
+	req, err := parseBatchRequest(ctx)
+	if err != nil {
+
+	}
 
 	result, err := c.BatchService.Batch(req)
-
 	if err != nil {
 
 	}
@@ -48,24 +50,74 @@ func (c *batchController) Batch(ctx Context) {
 	ctx.SetJson(200, json)
 }
 
-func parseBatchRequest(ctx Context) *usecase.BatchRequest {
-
-	var br BatchRequest
+func parseBatchRequest(ctx Context) (*usecase.BatchRequest, error) {
 
 	data, err := ctx.GetRawData()
 	if err != nil {
-		return convertBatchRequest(&br)
+		return nil, err
 	}
 
-	err = json.Unmarshal(data, &br)
+	var req BatchRequest
+	err = json.Unmarshal(data, &req)
 	if err != nil {
-		return convertBatchRequest(&br)
+		return nil, err
 	}
 
-	for i := 0; i < len(br.Objects); i++ {
-		br.Objects[i].User = ctx.GetParam("user")
-		br.Objects[i].Repo = ctx.GetParam("repo")
+	//user := ctx.GetParam("user")
+	//repo := ctx.GetParam("repo")
+
+	var objs []*usecase.ObjectRequest
+	for _, o := range req.Objects {
+
+		item := &usecase.ObjectRequest{
+			Oid:  o.Oid,
+			Size: o.Size,
+		}
+
+		objs = append(objs, item)
 	}
 
-	return convertBatchRequest(&br)
+	br := &usecase.BatchRequest{
+		Objects: objs,
+	}
+
+	return br, nil
+}
+
+func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
+
+	var objs []*ResponseObject
+
+	res := &BatchResponse{
+		Transfer: "basic",
+		Objects:  objs,
+	}
+
+	for _, batchObj := range result.Objects {
+
+		header := make(map[string]string)
+		header["Accept"] = contentMediaType
+
+		obj := newResponseObject()
+
+		if batchObj.MetaExists {
+
+		}
+
+		if batchObj.ObjectExists {
+			obj.Actions["download"] = &Link{
+				Href:   "https://hoge",
+				Header: header,
+			}
+		} else {
+			obj.Actions["upload"] = &Link{
+				Href:   "https://hoge",
+				Header: header,
+			}
+		}
+
+		objs = append(objs, obj)
+	}
+
+	return res
 }
