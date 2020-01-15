@@ -1,5 +1,7 @@
 package adapter
 
+import "io"
+
 // Context is ...
 type Context interface {
 	GetHeader(string) string
@@ -7,5 +9,7 @@ type Context interface {
 	GetRawData() ([]byte, error)
 	SetStatus(int)
 	SetHeader(string, string)
-	SetJson(int, interface{})
+
+	GetResponseWriter() io.Writer
+	GetRequestReader() io.Reader
 }

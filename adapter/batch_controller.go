@@ -47,7 +47,8 @@ func (c *batchController) Batch(ctx Context) {
 	}
 
 	ctx.SetHeader("Content-Type", metaMediaType)
-	ctx.SetJson(200, json)
+	ctx.SetStatus(200)
+	ctx.GetResponseWriter().Write(json)
 }
 
 func parseBatchRequest(ctx Context) (*usecase.BatchRequest, error) {
@@ -88,17 +89,14 @@ func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
 
 	var objs []*ResponseObject
 
-	res := &BatchResponse{
-		Transfer: "basic",
-		Objects:  objs,
-	}
-
 	for _, batchObj := range result.Objects {
 
 		header := make(map[string]string)
 		header["Accept"] = contentMediaType
 
 		obj := newResponseObject()
+		obj.Oid = batchObj.Oid
+		obj.Size = batchObj.Size
 
 		if batchObj.MetaExists {
 
@@ -117,6 +115,11 @@ func convertBatchResponse(result *usecase.BatchResult) *BatchResponse {
 		}
 
 		objs = append(objs, obj)
+	}
+
+	res := &BatchResponse{
+		Transfer: "basic",
+		Objects:  objs,
 	}
 
 	return res

@@ -32,6 +32,14 @@ type contentRepository struct {
 	bucket     string
 }
 
+type writerWrapper struct {
+	w io.Writer
+}
+
+func (ww writerWrapper) WriteAt(p []byte, offset int64) (n int, err error) {
+	return ww.w.Write(p)
+}
+
 func NewContentRepository(bucket string) (usecase.ContentRepository, error) {
 
 	sess, err := session.NewSession()
@@ -49,7 +57,7 @@ func NewContentRepository(bucket string) (usecase.ContentRepository, error) {
 	return r, nil
 }
 
-func (r *contentRepository) Get(meta *entity.MetaData, w io.WriterAt, from int64, to int64) (int64, error) {
+func (r *contentRepository) Get(meta *entity.MetaData, w io.Writer, from int64, to int64) (int64, error) {
 
 	rangeHeader := ""
 	if from > 0 && to > from {
@@ -62,7 +70,7 @@ func (r *contentRepository) Get(meta *entity.MetaData, w io.WriterAt, from int64
 		Range:  &rangeHeader,
 	}
 
-	return r.downloader.Download(w, input)
+	return r.downloader.Download(writerWrapper{w: w}, input)
 }
 
 func (r *contentRepository) Put(meta *entity.MetaData, reader io.Reader) error {

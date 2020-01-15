@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ikmski/git-lfs3/adapter"
 )
@@ -35,6 +37,10 @@ func (ctx *context) SetHeader(key string, val string) {
 	ctx.c.Header(key, val)
 }
 
-func (ctx *context) SetJson(status int, json interface{}) {
-	ctx.c.JSON(status, json)
+func (ctx *context) GetResponseWriter() io.Writer {
+	return ctx.c.Writer
+}
+
+func (ctx *context) GetRequestReader() io.Reader {
+	return ctx.c.Request.Body
 }

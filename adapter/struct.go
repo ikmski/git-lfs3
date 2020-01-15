@@ -16,9 +16,9 @@ type BatchRequest struct {
 type ObjectRequest struct {
 	Oid      string `json:"oid"`
 	Size     int64  `json:"size"`
-	User     string
-	Password string
-	Repo     string
+	User     string `json:"user"`
+	Password string `json:"password"`
+	Repo     string `json:"repo"`
 }
 
 // Ref is ...

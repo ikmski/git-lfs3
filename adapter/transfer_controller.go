@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -28,9 +27,9 @@ func NewTransferController(s usecase.TransferService) TransferController {
 
 func (c *transferController) Download(ctx Context) {
 
-	o := parseObjectRequest(ctx)
+	or := parseObjectRequest(ctx)
 
-	exists := c.transferService.Exists(o)
+	exists := c.transferService.Exists(or)
 	if !exists {
 		ctx.SetStatus(404)
 		return
@@ -39,8 +38,9 @@ func (c *transferController) Download(ctx Context) {
 	rangeHeader := ctx.GetHeader("Range")
 	if rangeHeader != "" {
 
+		size := c.transferService.GetSize(or)
 		var fromByte int64
-		var toByte int64 = o.Size
+		var toByte int64 = size
 		regex := regexp.MustCompile(`bytes=(.*)\-(.*)`)
 		match := regex.FindStringSubmatch(rangeHeader)
 		if match != nil && len(match) >= 3 {
@@ -51,13 +51,14 @@ func (c *transferController) Download(ctx Context) {
 				toByte, _ = strconv.ParseInt(match[2], 10, 64)
 			}
 		}
+		or.From = fromByte
+		or.To = toByte
 
 		ctx.SetHeader("Content-Range", fmt.Sprintf("bytes %d-%d/%d", fromByte, toByte-1, int64(toByte-fromByte)))
 		ctx.SetStatus(206)
 	}
 
-	buf := bytes.NewBuffer([]byte{})
-	_, err := c.transferService.Download(o, buf)
+	_, err := c.transferService.Download(or, ctx.GetResponseWriter())
 	if err != nil {
 		ctx.SetStatus(404)
 		return
@@ -73,8 +74,7 @@ func (c *transferController) Upload(ctx Context) {
 		return
 	}
 
-	buf := bytes.NewBuffer([]byte{})
-	err := c.transferService.Upload(o, buf)
+	err := c.transferService.Upload(o, ctx.GetRequestReader())
 	if err != nil {
 		ctx.SetStatus(500)
 		//fmt.Fprintf(c.Writer, `{"message":"%s"}`, err)

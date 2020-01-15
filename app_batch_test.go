@@ -53,6 +53,7 @@ func TestBatchDownload(t *testing.T) {
 	var responseData adapter.BatchResponse
 	err = json.Unmarshal(responseBody, &responseData)
 	if err != nil {
+		t.Logf("%v", responseData)
 		t.Fatalf("got error: %s", err)
 	}
 
@@ -79,7 +80,7 @@ func TestBatchUpload(t *testing.T) {
 
 	var objs []*adapter.ObjectRequest
 	obj := &adapter.ObjectRequest{
-		Oid:  testContentOid,
+		Oid:  testNonExistingOid,
 		Size: testContentSize,
 	}
 	objs = append(objs, obj)
@@ -122,8 +123,8 @@ func TestBatchUpload(t *testing.T) {
 		t.Errorf("got %v\nwant %v", responseData.Transfer, "basic")
 	}
 
-	if responseData.Objects[0].Oid != testContentOid {
-		t.Errorf("got %v\nwant %v", responseData.Objects[0].Oid, testContentOid)
+	if responseData.Objects[0].Oid != testNonExistingOid {
+		t.Errorf("got %v\nwant %v", responseData.Objects[0].Oid, testNonExistingOid)
 	}
 	if responseData.Objects[0].Size != testContentSize {
 		t.Errorf("got %v\nwant %v", responseData.Objects[0].Size, testContentSize)

@@ -1,6 +1,8 @@
 package usecase
 
-import "github.com/ikmski/git-lfs3/entity"
+import (
+	"github.com/ikmski/git-lfs3/entity"
+)
 
 // BatchService is ...
 type BatchService interface {

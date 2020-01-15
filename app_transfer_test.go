@@ -119,12 +119,13 @@ func TestUpload(t *testing.T) {
 		t.Fatalf("error retreiving from content store: %s", err)
 	}
 
-	c, err := ioutil.ReadAll(f)
+	c, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		t.Fatalf("error reading content: %s", err)
 	}
 
 	if string(c) != testContent {
+		t.Logf(string(c))
 		t.Fatalf("expected content, got `%s`", string(c))
 	}
 }

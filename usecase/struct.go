@@ -9,6 +9,8 @@ type BatchRequest struct {
 type ObjectRequest struct {
 	Oid  string
 	Size int64
+	From int64
+	To   int64
 }
 
 // BatchResult is ...

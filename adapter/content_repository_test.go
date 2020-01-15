@@ -170,7 +170,7 @@ func TestContentStoreGet(t *testing.T) {
 		t.Fatalf("expected get to succeed, got: %s", err)
 	}
 
-	by, _ := ioutil.ReadAll(f)
+	by, _ := ioutil.ReadFile(fileName)
 	if string(by) != "test content" {
 		t.Fatalf("expected to read content, got: %s", string(by))
 	}
