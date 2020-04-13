@@ -3,14 +3,20 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/ikmski/git-lfs3/adapter"
+)
+
+const (
+	contentMediaType = "application/vnd.git-lfs"
+	metaMediaType    = "application/vnd.git-lfs+json"
 )
 
 type app struct {
 	config serverConfig
-	router *gin.Engine
+	router *mux.Router
 }
 
 func newApp(
@@ -22,12 +28,15 @@ func newApp(
 		config: conf,
 	}
 
-	r := gin.Default()
+	r := mux.NewRouter()
 
-	r.POST("/:user/:repo/objects/batch", func(c *gin.Context) { batchController.Batch(newContext(c)) })
+	r.Methods("POST").Path("/{user}/{repo}/objects/batch").MatcherFunc(MetaMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { batchController.Batch(newContext(w, r)) })
 
-	r.GET("/:user/:repo/objects/:oid", func(c *gin.Context) { transferController.Download(newContext(c)) })
-	r.PUT("/:user/:repo/objects/:oid", func(c *gin.Context) { transferController.Upload(newContext(c)) })
+	r.Methods("GET").Path("/{user}/{repo}/objects/{oid}").MatcherFunc(ContentMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { transferController.Download(newContext(w, r)) })
+	r.Methods("PUT").Path("/{user}/{repo}/objects/{oid}").MatcherFunc(ContentMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { transferController.Upload(newContext(w, r)) })
 
 	a.router = r
 
@@ -41,12 +50,26 @@ func (a *app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (a *app) serve() error {
 
-	if a.config.Tls {
-		return a.router.RunTLS(
-			fmt.Sprintf(":%d", a.config.Port),
-			a.config.CertFile,
-			a.config.KeyFile)
+	s := &http.Server{
+		Handler: a.router,
+		Addr:    fmt.Sprintf(":%d", a.config.Port),
 	}
 
-	return a.router.Run(fmt.Sprintf(":%d", a.config.Port))
+	if a.config.Tls {
+		return s.ListenAndServeTLS(a.config.CertFile, a.config.KeyFile)
+	} else {
+		return s.ListenAndServe()
+	}
+}
+
+func ContentMatcher(r *http.Request, m *mux.RouteMatch) bool {
+	mediaParts := strings.Split(r.Header.Get("Accept"), ";")
+	mt := mediaParts[0]
+	return mt == contentMediaType
+}
+
+func MetaMatcher(r *http.Request, m *mux.RouteMatch) bool {
+	mediaParts := strings.Split(r.Header.Get("Accept"), ";")
+	mt := mediaParts[0]
+	return mt == metaMediaType
 }

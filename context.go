@@ -1,46 +1,53 @@
 package main
 
 import (
+	"bytes"
 	"io"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/ikmski/git-lfs3/adapter"
 )
 
 type context struct {
-	c *gin.Context
+	w http.ResponseWriter
+	r *http.Request
 }
 
-func newContext(c *gin.Context) adapter.Context {
+func newContext(w http.ResponseWriter, r *http.Request) adapter.Context {
 	ctx := new(context)
-	ctx.c = c
+	ctx.w = w
+	ctx.r = r
 	return ctx
 }
 
 func (ctx *context) GetHeader(s string) string {
-	return ctx.c.GetHeader(s)
+	return ctx.r.Header.Get(s)
 }
 
 func (ctx *context) GetParam(s string) string {
-	return ctx.c.Param(s)
+	vars := mux.Vars(ctx.r)
+	return vars[s]
 }
 
 func (ctx *context) GetRawData() ([]byte, error) {
-	return ctx.c.GetRawData()
+	buf := new(bytes.Buffer)
+	io.Copy(buf, ctx.r.Body)
+	return buf.Bytes(), nil
 }
 
 func (ctx *context) SetStatus(s int) {
-	ctx.c.Status(s)
+	ctx.w.WriteHeader(s)
 }
 
 func (ctx *context) SetHeader(key string, val string) {
-	ctx.c.Header(key, val)
+	ctx.w.Header().Set(key, val)
 }
 
 func (ctx *context) GetResponseWriter() io.Writer {
-	return ctx.c.Writer
+	return ctx.w
 }
 
 func (ctx *context) GetRequestReader() io.Reader {
-	return ctx.c.Request.Body
+	return ctx.r.Body
 }
