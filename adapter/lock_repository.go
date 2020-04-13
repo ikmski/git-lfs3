@@ -38,8 +38,8 @@ func NewLockRepository(db *bolt.DB) usecase.LockRepository {
 	return &lockRepository{db: db}
 }
 
-// AddLocks write locks to the store for the repo.
-func (r *lockRepository) AddLocks(repo string, l ...entity.Lock) error {
+// Add write locks to the store for the repo.
+func (r *lockRepository) Add(repo string, l ...entity.Lock) error {
 
 	err := r.db.Update(func(tx *bolt.Tx) error {
 
@@ -67,8 +67,8 @@ func (r *lockRepository) AddLocks(repo string, l ...entity.Lock) error {
 	return err
 }
 
-// Locks retrieves locks for the repo from the store
-func (r *lockRepository) Locks(repo string) ([]entity.Lock, error) {
+// Fetch retrieves locks for the repo from the store
+func (r *lockRepository) Fetch(repo string) ([]entity.Lock, error) {
 
 	var locks []entity.Lock
 	err := r.db.View(func(tx *bolt.Tx) error {
@@ -89,10 +89,10 @@ func (r *lockRepository) Locks(repo string) ([]entity.Lock, error) {
 	return locks, err
 }
 
-// FilteredLocks return filtered locks for the repo
-func (r *lockRepository) FilteredLocks(repo, path, cursor, limit string) (locks []entity.Lock, next string, err error) {
+// FilteredFetch return filtered locks for the repo
+func (r *lockRepository) FilteredFetch(repo string, path string, cursor string, limit string) (locks []entity.Lock, next string, err error) {
 
-	locks, err = r.Locks(repo)
+	locks, err = r.Fetch(repo)
 	if err != nil {
 		return
 	}
@@ -144,8 +144,8 @@ func (r *lockRepository) FilteredLocks(repo, path, cursor, limit string) (locks 
 	return locks, next, nil
 }
 
-// DeleteLock removes lock for the repo by id from the store
-func (r *lockRepository) DeleteLock(repo, user, id string, force bool) (*entity.Lock, error) {
+// Delete removes lock for the repo by id from the store
+func (r *lockRepository) Delete(repo string, user string, id string, force bool) (*entity.Lock, error) {
 
 	var deleted *entity.Lock
 	err := r.db.Update(func(tx *bolt.Tx) error {
@@ -193,23 +193,8 @@ func (r *lockRepository) DeleteLock(repo, user, id string, force bool) (*entity.
 	return deleted, err
 }
 
-// LocksByCreatedAt is ...
-type LocksByCreatedAt []entity.Lock
-
-func (c LocksByCreatedAt) Len() int {
-	return len(c)
-}
-
-func (c LocksByCreatedAt) Less(i, j int) bool {
-	return c[i].LockedAt < c[j].LockedAt
-}
-
-func (c LocksByCreatedAt) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
-}
-
-// AllLocks return all locks in the store, lock path is prepended with repo
-func (s *lockRepository) AllLocks() ([]entity.Lock, error) {
+// FetchAll return all locks in the store, lock path is prepended with repo
+func (s *lockRepository) FetchAll() ([]entity.Lock, error) {
 
 	var locks []entity.Lock
 	err := s.db.View(func(tx *bolt.Tx) error {
@@ -237,4 +222,19 @@ func (s *lockRepository) AllLocks() ([]entity.Lock, error) {
 		return nil
 	})
 	return locks, err
+}
+
+// LocksByCreatedAt is ...
+type LocksByCreatedAt []entity.Lock
+
+func (c LocksByCreatedAt) Len() int {
+	return len(c)
+}
+
+func (c LocksByCreatedAt) Less(i, j int) bool {
+	return c[i].LockedAt < c[j].LockedAt
+}
+
+func (c LocksByCreatedAt) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
 }

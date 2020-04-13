@@ -6,9 +6,9 @@ import (
 
 // LockRepository is ...
 type LockRepository interface {
-	AddLocks(repo string, l ...entity.Lock) error
-	Locks(repo string) ([]entity.Lock, error)
-	FilteredLocks(repo, path, cursor, limit string) (locks []entity.Lock, next string, err error)
-	DeleteLock(repo, user, id string, force bool) (*entity.Lock, error)
-	AllLocks() ([]entity.Lock, error)
+	Add(repo string, l ...entity.Lock) error
+	Delete(repo string, user string, id string, force bool) (*entity.Lock, error)
+	Fetch(repo string) ([]entity.Lock, error)
+	FilteredFetch(repo string, path string, cursor string, limit string) (locks []entity.Lock, next string, err error)
+	FetchAll() ([]entity.Lock, error)
 }

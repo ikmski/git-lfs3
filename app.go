@@ -30,13 +30,19 @@ func newApp(
 
 	r := mux.NewRouter()
 
+	// Batch
 	r.Methods("POST").Path("/{user}/{repo}/objects/batch").MatcherFunc(MetaMatcher).
 		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { batchController.Batch(newContext(w, r)) })
 
+	// Transfer
 	r.Methods("GET").Path("/{user}/{repo}/objects/{oid}").MatcherFunc(ContentMatcher).
 		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { transferController.Download(newContext(w, r)) })
 	r.Methods("PUT").Path("/{user}/{repo}/objects/{oid}").MatcherFunc(ContentMatcher).
 		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { transferController.Upload(newContext(w, r)) })
+
+	// Lock
+	//	r.Methods("GET").Path("/{user}/{repo}/locks").MatcherFunc(MetaMatcher).
+	//		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { lockController.Locks(newContext(w, r)) })
 
 	a.router = r
 
