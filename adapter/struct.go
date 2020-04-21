@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+const (
+	contentMediaType = "application/vnd.git-lfs"
+	metaMediaType    = "application/vnd.git-lfs+json"
+)
+
 // BatchRequest is ...
 type BatchRequest struct {
 	Operation string           `json:"operation"`

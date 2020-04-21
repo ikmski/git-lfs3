@@ -6,11 +6,6 @@ import (
 	"github.com/ikmski/git-lfs3/usecase"
 )
 
-const (
-	contentMediaType = "application/vnd.git-lfs"
-	metaMediaType    = contentMediaType + "+json"
-)
-
 // BatchController is ...
 type BatchController interface {
 	Batch(ctx Context)

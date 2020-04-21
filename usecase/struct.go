@@ -27,34 +27,43 @@ type ObjectResult struct {
 }
 
 type LockRequest struct {
+	Repo    string
+	User    string
 	Path    string
-	Refspec string
-}
-
-type LockListRequest struct {
-	Path    string
-	ID      string
-	Cursor  string
-	Limit   int32
-	Refspec string
-}
-
-type LockVerifyRequest struct {
-	Cursor  string
-	Limit   int32
 	Refspec string
 }
 
 type UnlockRequest struct {
+	Repo    string
+	User    string
+	ID      string
 	Force   bool
 	Refspec string
 }
 
+type LockListRequest struct {
+	Repo    string
+	Path    string
+	Cursor  string
+	Limit   int
+	Refspec string
+}
+
+type LockVerifyRequest struct {
+	Repo    string
+	User    string
+	Path    string
+	Cursor  string
+	Limit   int
+	Refspec string
+}
+
 type LockResult struct {
-	ID       string
-	Path     string
-	Owner    string
-	LockedAt int64 // UnixTime
+	ID           string
+	Path         string
+	Owner        string
+	LockedAt     int64 // UnixTime
+	AlreadyExist bool
 }
 
 type LockListResult struct {
