@@ -2,8 +2,6 @@ package adapter
 
 import (
 	"testing"
-
-	"github.com/ikmski/git-lfs3/usecase"
 )
 
 func TestGetMeta(t *testing.T) {
@@ -11,7 +9,7 @@ func TestGetMeta(t *testing.T) {
 	setupRepository()
 	defer teardownRepository()
 
-	meta, err := testMetaDataRepository.Get(&usecase.ObjectRequest{Oid: testContentOid})
+	meta, err := testMetaDataRepository.Get(testContentOid)
 	if err != nil {
 		t.Fatalf("Error retreiving meta: %s", err)
 	}
@@ -30,7 +28,7 @@ func TestPutMeta(t *testing.T) {
 	setupRepository()
 	defer teardownRepository()
 
-	meta, err := testMetaDataRepository.Put(&usecase.ObjectRequest{Oid: testNonExistingOid, Size: 42})
+	meta, err := testMetaDataRepository.Put(testNonExistingOid, 42)
 	if err != nil {
 		t.Errorf("expected put to succeed, got : %s", err)
 	}
@@ -41,7 +39,7 @@ func TestPutMeta(t *testing.T) {
 		}
 	*/
 
-	meta, err = testMetaDataRepository.Get(&usecase.ObjectRequest{Oid: testNonExistingOid})
+	meta, err = testMetaDataRepository.Get(testNonExistingOid)
 	if err != nil {
 		t.Errorf("expected to be able to retreive new put, got : %s", err)
 	}
@@ -54,7 +52,7 @@ func TestPutMeta(t *testing.T) {
 		t.Errorf("expected sizes to match, got: %d", meta.Size)
 	}
 
-	meta, err = testMetaDataRepository.Put(&usecase.ObjectRequest{Oid: testNonExistingOid, Size: 42})
+	meta, err = testMetaDataRepository.Put(testNonExistingOid, 42)
 	if err != nil {
 		t.Errorf("expected put to succeed, got : %s", err)
 	}

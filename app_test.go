@@ -119,12 +119,7 @@ func seedMetaDataRepository() error {
 		}
 	*/
 
-	o := &usecase.ObjectRequest{
-		Oid:  testContentOid,
-		Size: testContentSize,
-	}
-
-	_, err := testMetaDataRepo.Put(o)
+	_, err := testMetaDataRepo.Put(testContentOid, testContentSize)
 	if err != nil {
 		return err
 	}

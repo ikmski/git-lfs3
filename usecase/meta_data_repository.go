@@ -6,8 +6,8 @@ import (
 
 // MetaDataRepository is ...
 type MetaDataRepository interface {
-	Get(o *ObjectRequest) (*entity.MetaData, error)
-	Put(o *ObjectRequest) (*entity.MetaData, error)
-	Delete(o *ObjectRequest) error
+	Get(oid string) (*entity.MetaData, error)
+	Put(oid string, size int64) (*entity.MetaData, error)
+	Delete(oid string) error
 	Objects() ([]*entity.MetaData, error)
 }

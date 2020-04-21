@@ -72,8 +72,7 @@ func setupRepository() {
 		os.Exit(1)
 	}
 
-	o := &usecase.ObjectRequest{Oid: testContentOid, Size: testContentSize}
-	if _, err := testMetaDataRepository.Put(o); err != nil {
+	if _, err := testMetaDataRepository.Put(testContentOid, testContentSize); err != nil {
 		teardownRepository()
 		fmt.Printf("error seeding test meta store: %s\n", err)
 		os.Exit(1)

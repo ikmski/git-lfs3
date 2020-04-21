@@ -27,7 +27,7 @@ func NewTransferService(metaDataRepo MetaDataRepository, contentRepo ContentRepo
 
 func (s *transferService) Download(req *ObjectRequest, w io.Writer) (int64, error) {
 
-	meta, err := s.MetaDataRepository.Get(req)
+	meta, err := s.MetaDataRepository.Get(req.Oid)
 	if err != nil {
 		return 0, err
 	}
@@ -37,7 +37,7 @@ func (s *transferService) Download(req *ObjectRequest, w io.Writer) (int64, erro
 
 func (s *transferService) Upload(req *ObjectRequest, r io.Reader) error {
 
-	meta, err := s.MetaDataRepository.Get(req)
+	meta, err := s.MetaDataRepository.Get(req.Oid)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (s *transferService) Upload(req *ObjectRequest, r io.Reader) error {
 
 func (s *transferService) Exists(req *ObjectRequest) bool {
 
-	meta, err := s.MetaDataRepository.Get(req)
+	meta, err := s.MetaDataRepository.Get(req.Oid)
 	if err != nil {
 		return false
 	}
@@ -57,7 +57,7 @@ func (s *transferService) Exists(req *ObjectRequest) bool {
 
 func (s *transferService) GetSize(req *ObjectRequest) int64 {
 
-	meta, err := s.MetaDataRepository.Get(req)
+	meta, err := s.MetaDataRepository.Get(req.Oid)
 	if err != nil {
 		return 0
 	}

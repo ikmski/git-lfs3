@@ -28,7 +28,7 @@ func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 
 	for _, obj := range req.Objects {
 
-		meta, err := c.MetaDataRepository.Get(obj)
+		meta, err := c.MetaDataRepository.Get(obj.Oid)
 
 		if err == nil && c.ContentRepository.Exists(meta) {
 			// Object is found and exists
@@ -38,7 +38,7 @@ func (c *batchService) Batch(req *BatchRequest) (*BatchResult, error) {
 		}
 
 		// Object is not found
-		meta, err = c.MetaDataRepository.Put(obj)
+		meta, err = c.MetaDataRepository.Put(obj.Oid, obj.Size)
 		if err == nil {
 			objectResult := createObjectResult(obj, meta, true, false)
 			objectResults = append(objectResults, objectResult)

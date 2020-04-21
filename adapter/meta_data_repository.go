@@ -36,16 +36,16 @@ func NewMetaDataRepository(db *bolt.DB) usecase.MetaDataRepository {
 
 // Get retrieves the Meta information for an object given information in
 // Object
-func (r *metaDataRepository) Get(o *usecase.ObjectRequest) (*entity.MetaData, error) {
+func (r *metaDataRepository) Get(oid string) (*entity.MetaData, error) {
 
-	meta, error := r.UnsafeGet(o)
+	meta, error := r.UnsafeGet(oid)
 	return meta, error
 }
 
 // Get retrieves the Meta information for an object given information in
 // Object
 // DO NOT CHECK authentication, as it is supposed to have been done before
-func (r *metaDataRepository) UnsafeGet(o *usecase.ObjectRequest) (*entity.MetaData, error) {
+func (r *metaDataRepository) UnsafeGet(oid string) (*entity.MetaData, error) {
 
 	var meta entity.MetaData
 
@@ -56,7 +56,7 @@ func (r *metaDataRepository) UnsafeGet(o *usecase.ObjectRequest) (*entity.MetaDa
 			return errors.New("Bucket not found")
 		}
 
-		value := bucket.Get([]byte(o.Oid))
+		value := bucket.Get([]byte(oid))
 		if len(value) == 0 {
 			return errors.New("Object not found")
 		}
@@ -73,10 +73,10 @@ func (r *metaDataRepository) UnsafeGet(o *usecase.ObjectRequest) (*entity.MetaDa
 }
 
 // Put writes meta information from Object to the store.
-func (r *metaDataRepository) Put(o *usecase.ObjectRequest) (*entity.MetaData, error) {
+func (r *metaDataRepository) Put(oid string, size int64) (*entity.MetaData, error) {
 
 	// Check if it exists first
-	meta, err := r.Get(o)
+	meta, err := r.Get(oid)
 	if err == nil {
 		return meta, nil
 	}
@@ -84,8 +84,8 @@ func (r *metaDataRepository) Put(o *usecase.ObjectRequest) (*entity.MetaData, er
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	meta = &entity.MetaData{
-		Oid:  o.Oid,
-		Size: o.Size,
+		Oid:  oid,
+		Size: size,
 	}
 
 	err = enc.Encode(meta)
@@ -100,7 +100,7 @@ func (r *metaDataRepository) Put(o *usecase.ObjectRequest) (*entity.MetaData, er
 			return errors.New("Bucket not found")
 		}
 
-		err = bucket.Put([]byte(o.Oid), buf.Bytes())
+		err = bucket.Put([]byte(oid), buf.Bytes())
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func (r *metaDataRepository) Put(o *usecase.ObjectRequest) (*entity.MetaData, er
 }
 
 // Delete removes the meta information from Object to the store.
-func (r *metaDataRepository) Delete(o *usecase.ObjectRequest) error {
+func (r *metaDataRepository) Delete(oid string) error {
 
 	err := r.db.Update(func(tx *bolt.Tx) error {
 
@@ -125,7 +125,7 @@ func (r *metaDataRepository) Delete(o *usecase.ObjectRequest) error {
 			return errors.New("Bucket not found")
 		}
 
-		err := bucket.Delete([]byte(o.Oid))
+		err := bucket.Delete([]byte(oid))
 		if err != nil {
 			return err
 		}
