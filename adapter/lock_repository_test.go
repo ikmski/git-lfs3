@@ -11,17 +11,18 @@ import (
 
 func TestLocks(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
 	for i := 0; i < 5; i++ {
 		lock := NewTestLock(randomLockId(), fmt.Sprintf("path-%d", i), fmt.Sprintf("user-%d", i))
-		if err := testLockRepository.Add(testRepo, lock); err != nil {
+		if err := d.lockRepository.Add(d.repoName, lock); err != nil {
 			t.Errorf("expected AddLocks to succeed, got : %s", err)
 		}
 	}
 
-	locks, err := testLockRepository.Fetch(testRepo)
+	locks, err := d.lockRepository.Fetch(d.repoName)
 	if err != nil {
 		t.Errorf("expected Locks to succeed, got : %s", err)
 	}
@@ -32,19 +33,20 @@ func TestLocks(t *testing.T) {
 
 func TestFilteredLocks(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
 	testLocks := make([]entity.Lock, 0, 5)
 	for i := 0; i < 5; i++ {
 		lock := NewTestLock(randomLockId(), fmt.Sprintf("path-%d", i), fmt.Sprintf("user-%d", i))
 		testLocks = append(testLocks, lock)
 	}
-	if err := testLockRepository.Add(testRepo, testLocks...); err != nil {
+	if err := d.lockRepository.Add(d.repoName, testLocks...); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	locks, next, err := testLockRepository.FilteredFetch(testRepo, "", "", "3")
+	locks, next, err := d.lockRepository.FilteredFetch(d.repoName, "", "", "3")
 	if err != nil {
 		t.Errorf("expected FilteredLocks to succeed, got : %s", err)
 	}
@@ -55,7 +57,7 @@ func TestFilteredLocks(t *testing.T) {
 		t.Errorf("expected next to exist")
 	}
 
-	locks, next, err = testLockRepository.FilteredFetch(testRepo, "", next, "2")
+	locks, next, err = d.lockRepository.FilteredFetch(d.repoName, "", next, "2")
 	if err != nil {
 		t.Errorf("expected FilteredLocks to succeed, got : %s", err)
 	}
@@ -69,37 +71,39 @@ func TestFilteredLocks(t *testing.T) {
 
 func TestAddLocks(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
-	lock := NewTestLock(testLockID, testLockPath, testUser1)
-	if err := testLockRepository.Add(testRepo, lock); err != nil {
+	lock := NewTestLock(d.lockID, d.lockPath, d.userName1)
+	if err := d.lockRepository.Add(d.repoName, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	locks, _, err := testLockRepository.FilteredFetch(testRepo, lock.Path, "", "1")
+	locks, _, err := d.lockRepository.FilteredFetch(d.repoName, lock.Path, "", "1")
 	if err != nil {
 		t.Errorf("expected FilteredLocks to succeed, got : %s", err)
 	}
 	if len(locks) != 1 {
 		t.Errorf("expected lock to be existed")
 	}
-	if locks[0].ID != testLockID {
+	if locks[0].ID != d.lockID {
 		t.Errorf("expected lockId to match, got: %v", locks[0])
 	}
 }
 
 func TestDeleteLock(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
-	lock := NewTestLock(testLockID, testLockPath, testUser1)
-	if err := testLockRepository.Add(testRepo, lock); err != nil {
+	lock := NewTestLock(d.lockID, d.lockPath, d.userName1)
+	if err := d.lockRepository.Add(d.repoName, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	deleted, err := testLockRepository.Delete(testRepo, testUser1, lock.ID, false)
+	deleted, err := d.lockRepository.Delete(d.repoName, d.userName1, lock.ID, false)
 	if err != nil {
 		t.Errorf("expected DeleteLock to succeed, got : %s", err)
 	}
@@ -110,15 +114,16 @@ func TestDeleteLock(t *testing.T) {
 
 func TestDeleteLockNotOwner(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
-	lock := NewTestLock(testLockID, testLockPath, testUser1)
-	if err := testLockRepository.Add(testRepo, lock); err != nil {
+	lock := NewTestLock(d.lockID, d.lockPath, d.userName1)
+	if err := d.lockRepository.Add(d.repoName, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	deleted, err := testLockRepository.Delete(testRepo, testUser2, lock.ID, false)
+	deleted, err := d.lockRepository.Delete(d.repoName, d.userName2, lock.ID, false)
 	if err == nil || deleted != nil {
 		t.Errorf("expected DeleteLock to failed")
 	}
@@ -130,15 +135,16 @@ func TestDeleteLockNotOwner(t *testing.T) {
 
 func TestDeleteLockNotOwnerForce(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
-	lock := NewTestLock(testLockID, testLockPath, testUser1)
-	if err := testLockRepository.Add(testRepo, lock); err != nil {
+	lock := NewTestLock(d.lockID, d.lockPath, d.userName1)
+	if err := d.lockRepository.Add(d.repoName, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	deleted, err := testLockRepository.Delete(testRepo, testUser2, lock.ID, true)
+	deleted, err := d.lockRepository.Delete(d.repoName, d.userName2, lock.ID, true)
 	if err != nil {
 		t.Errorf("expected DeleteLock(force) to succeed, got : %s", err)
 	}
@@ -149,15 +155,16 @@ func TestDeleteLockNotOwnerForce(t *testing.T) {
 
 func TestDeleteLockNonExisting(t *testing.T) {
 
-	setupRepository()
-	defer teardownRepository()
+	d := newTestData()
+	setupRepository(d)
+	defer teardownRepository(d)
 
-	lock := NewTestLock(testLockID, testLockPath, testUser1)
-	if err := testLockRepository.Add(testRepo, lock); err != nil {
+	lock := NewTestLock(d.lockID, d.lockPath, d.userName1)
+	if err := d.lockRepository.Add(d.repoName, lock); err != nil {
 		t.Errorf("expected AddLocks to succeed, got : %s", err)
 	}
 
-	deleted, err := testLockRepository.Delete(testRepo, testUser1, testNonExistingLockID, false)
+	deleted, err := d.lockRepository.Delete(d.repoName, d.userName1, d.nonExistLockID, false)
 	if err != nil {
 		t.Errorf("expected DeleteLock to succeed, got : %s", err)
 	}

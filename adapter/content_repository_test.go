@@ -37,6 +37,8 @@ type TestUploader struct {
 	err    error
 }
 
+const testS3BucketName = "test_bucket"
+
 func (s TestS3) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 	return &s.getResult, s.err
 }
@@ -57,25 +59,24 @@ func (u TestUploader) Upload(input *s3manager.UploadInput, options ...func(*s3ma
 
 func TestContentStorePut(t *testing.T) {
 
-	b := bytes.NewBuffer([]byte("test content"))
-	var contentSize int64 = 12
-
+	d := newTestData()
 	testContentRepository = &contentRepository{
 		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
-				ContentLength: &contentSize,
+				ContentLength: &d.contentSize,
 			},
 		},
 		downloader: TestDownloader{},
 		uploader:   TestUploader{},
-		bucket:     "test_bucket",
+		bucket:     testS3BucketName,
 	}
 
 	m := &entity.MetaData{
-		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
-		Size: contentSize,
+		Oid:  d.contentOid,
+		Size: d.contentSize,
 	}
 
+	b := bytes.NewBuffer([]byte(d.content))
 	err := testContentRepository.Put(m, b)
 	if err != nil {
 		t.Fatalf("expected put to succeed, got: %s", err)
@@ -84,25 +85,24 @@ func TestContentStorePut(t *testing.T) {
 
 func TestContentStorePutHashMismatch(t *testing.T) {
 
-	var contentSize int64 = 12
-
+	d := newTestData()
 	testContentRepository = &contentRepository{
 		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
-				ContentLength: &contentSize,
+				ContentLength: &d.contentSize,
 			},
 		},
 		downloader: TestDownloader{},
 		uploader:   TestUploader{},
-		bucket:     "test_bucket",
+		bucket:     testS3BucketName,
 	}
 
 	m := &entity.MetaData{
-		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
-		Size: contentSize,
+		Oid:  d.contentOid,
+		Size: d.contentSize,
 	}
 
-	b := bytes.NewBuffer([]byte("bogus content"))
+	b := bytes.NewBuffer([]byte(d.bogusContent))
 
 	err := testContentRepository.Put(m, b)
 	if err == nil {
@@ -112,25 +112,24 @@ func TestContentStorePutHashMismatch(t *testing.T) {
 
 func TestContentStorePutSizeMismatch(t *testing.T) {
 
-	var contentSize int64 = 12
-
+	d := newTestData()
 	testContentRepository = &contentRepository{
 		s3: TestS3{
 			headResult: s3.HeadObjectOutput{
-				ContentLength: &contentSize,
+				ContentLength: &d.contentSize,
 			},
 		},
 		downloader: TestDownloader{},
 		uploader:   TestUploader{},
-		bucket:     "test_bucket",
+		bucket:     testS3BucketName,
 	}
 
 	m := &entity.MetaData{
-		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
-		Size: 14,
+		Oid:  d.contentOid,
+		Size: d.bogusContentSize,
 	}
 
-	b := bytes.NewBuffer([]byte("test content"))
+	b := bytes.NewBuffer([]byte(d.contentOid))
 
 	err := testContentRepository.Put(m, b)
 	if err == nil {
@@ -140,7 +139,8 @@ func TestContentStorePutSizeMismatch(t *testing.T) {
 
 func TestContentStoreGet(t *testing.T) {
 
-	b := bytes.NewBuffer([]byte("test content"))
+	d := newTestData()
+	b := bytes.NewBuffer([]byte(d.content))
 
 	testContentRepository = &contentRepository{
 		s3: TestS3{},
@@ -148,12 +148,12 @@ func TestContentStoreGet(t *testing.T) {
 			content: b,
 		},
 		uploader: TestUploader{},
-		bucket:   "test_bucket",
+		bucket:   testS3BucketName,
 	}
 
 	m := &entity.MetaData{
-		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
-		Size: 12,
+		Oid:  d.contentOid,
+		Size: d.contentSize,
 	}
 
 	fileName := "tmp_object"
@@ -171,12 +171,14 @@ func TestContentStoreGet(t *testing.T) {
 	}
 
 	by, _ := ioutil.ReadFile(fileName)
-	if string(by) != "test content" {
+	if string(by) != d.content {
 		t.Fatalf("expected to read content, got: %s", string(by))
 	}
 }
 
 func TestContenStoreNotExists(t *testing.T) {
+
+	d := newTestData()
 
 	testContentRepository = &contentRepository{
 		s3: TestS3{
@@ -184,12 +186,12 @@ func TestContenStoreNotExists(t *testing.T) {
 		},
 		downloader: TestDownloader{},
 		uploader:   TestUploader{},
-		bucket:     "test_bucket",
+		bucket:     testS3BucketName,
 	}
 
 	m := &entity.MetaData{
-		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
-		Size: 12,
+		Oid:  d.contentOid,
+		Size: d.contentSize,
 	}
 
 	if testContentRepository.Exists(m) {
@@ -199,16 +201,18 @@ func TestContenStoreNotExists(t *testing.T) {
 
 func TestContentStoreExists(t *testing.T) {
 
+	d := newTestData()
+
 	testContentRepository = &contentRepository{
 		s3:         TestS3{},
 		downloader: TestDownloader{},
 		uploader:   TestUploader{},
-		bucket:     "test_bucket",
+		bucket:     testS3BucketName,
 	}
 
 	m := &entity.MetaData{
-		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
-		Size: 12,
+		Oid:  d.contentOid,
+		Size: d.contentSize,
 	}
 
 	if !testContentRepository.Exists(m) {

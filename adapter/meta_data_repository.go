@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	objectsBucket = []byte("objects")
+	metaBucket = []byte("meta")
 )
 
 type metaDataRepository struct {
@@ -23,7 +23,7 @@ func NewMetaDataRepository(db *bolt.DB) usecase.MetaDataRepository {
 
 	db.Update(func(tx *bolt.Tx) error {
 
-		_, err := tx.CreateBucketIfNotExists(objectsBucket)
+		_, err := tx.CreateBucketIfNotExists(metaBucket)
 		if err != nil {
 			return err
 		}
@@ -51,7 +51,7 @@ func (r *metaDataRepository) UnsafeGet(oid string) (*entity.MetaData, error) {
 
 	err := r.db.View(func(tx *bolt.Tx) error {
 
-		bucket := tx.Bucket(objectsBucket)
+		bucket := tx.Bucket(metaBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
 		}
@@ -95,7 +95,7 @@ func (r *metaDataRepository) Put(oid string, size int64) (*entity.MetaData, erro
 
 	err = r.db.Update(func(tx *bolt.Tx) error {
 
-		bucket := tx.Bucket(objectsBucket)
+		bucket := tx.Bucket(metaBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
 		}
@@ -120,7 +120,7 @@ func (r *metaDataRepository) Delete(oid string) error {
 
 	err := r.db.Update(func(tx *bolt.Tx) error {
 
-		bucket := tx.Bucket(objectsBucket)
+		bucket := tx.Bucket(metaBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
 		}
@@ -143,7 +143,7 @@ func (r *metaDataRepository) Objects() ([]*entity.MetaData, error) {
 
 	err := r.db.View(func(tx *bolt.Tx) error {
 
-		bucket := tx.Bucket(objectsBucket)
+		bucket := tx.Bucket(metaBucket)
 		if bucket == nil {
 			return errors.New("Bucket not found")
 		}
