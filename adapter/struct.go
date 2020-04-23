@@ -45,6 +45,23 @@ type ResponseObject struct {
 	Error   *ObjectError     `json:"error,omitempty"`
 }
 
+type LockListResponse struct {
+	Locks      []Lock `json:"locks"`
+	NextCursor string `json:"next_cursor,omitempty"`
+	Message    string `json:"message,omitempty"`
+}
+
+type Lock struct {
+	ID       string    `json:"id"`
+	Path     string    `json:"path"`
+	Owner    User      `json:"owner"`
+	LockedAt time.Time `json:"locked_at"`
+}
+
+type User struct {
+	Name string `json:"name"`
+}
+
 func newResponseObject() *ResponseObject {
 	r := new(ResponseObject)
 	r.Actions = make(map[string]*Link)

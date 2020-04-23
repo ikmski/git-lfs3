@@ -38,6 +38,7 @@ func initializeApp(config globalConfig) (*app, error) {
 	}
 
 	metaDataRepo := adapter.NewMetaDataRepository(db)
+	lockRepo := adapter.NewLockRepository(db)
 	contentRepo, err := adapter.NewContentRepository("test")
 	if err != nil {
 		return nil, err
@@ -45,11 +46,13 @@ func initializeApp(config globalConfig) (*app, error) {
 
 	batchService := usecase.NewBatchService(metaDataRepo, contentRepo)
 	transferService := usecase.NewTransferService(metaDataRepo, contentRepo)
+	lockService := usecase.NewLockService(lockRepo)
 
 	batchController := adapter.NewBatchController(batchService)
 	transferController := adapter.NewTransferController(transferService)
+	lockController := adapter.NewLockController(lockService)
 
-	app := newApp(config.Server, batchController, transferController)
+	app := newApp(config.Server, batchController, transferController, lockController)
 
 	return app, nil
 }

@@ -27,7 +27,13 @@ func (ctx *context) GetHeader(s string) string {
 
 func (ctx *context) GetParam(s string) string {
 	vars := mux.Vars(ctx.r)
-	return vars[s]
+
+	val, ok := vars[s]
+	if ok {
+		return val
+	}
+
+	return ctx.r.FormValue(s)
 }
 
 func (ctx *context) GetRawData() ([]byte, error) {

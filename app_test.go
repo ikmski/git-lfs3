@@ -18,6 +18,7 @@ var (
 	lfsServer        *httptest.Server
 	testMetaDataRepo usecase.MetaDataRepository
 	testContentRepo  usecase.ContentRepository
+	testLockRepo     usecase.LockRepository
 )
 
 const (
@@ -69,6 +70,11 @@ func TestMain(m *testing.M) {
 		fmt.Printf("Error creating meta store: %s", err)
 		os.Exit(1)
 	}
+	testLockRepo = adapter.NewLockRepository(db)
+	if err != nil {
+		fmt.Printf("Error creating lock store: %s", err)
+		os.Exit(1)
+	}
 
 	testContentRepo, err = adapter.NewMockedContentRepository("lfs-test-bucket")
 	if err != nil {
@@ -88,14 +94,22 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	err = seedLockRepository()
+	if err != nil {
+		fmt.Printf("Error seeding lock store: %s", err)
+		os.Exit(1)
+	}
+
 	conf := serverConfig{}
 	batchService := usecase.NewBatchService(testMetaDataRepo, testContentRepo)
 	transferService := usecase.NewTransferService(testMetaDataRepo, testContentRepo)
+	lockService := usecase.NewLockService(testLockRepo)
 
 	batchController := adapter.NewBatchController(batchService)
 	transferController := adapter.NewTransferController(transferService)
+	lockController := adapter.NewLockController(lockService)
 
-	app := newApp(conf, batchController, transferController)
+	app := newApp(conf, batchController, transferController, lockController)
 	lfsServer = httptest.NewServer(app)
 
 	ret := m.Run()
@@ -124,12 +138,22 @@ func seedMetaDataRepository() error {
 		return err
 	}
 
-	/*
-		lock := NewTestLock(testLockId, testLockPath, testUser1)
-		if err := testMetaStore.AddLocks(testRepo, lock); err != nil {
-			return err
-		}
-	*/
+	return nil
+}
+
+func seedLockRepository() error {
+
+	lock := entity.Lock{
+		ID:   "0000",
+		Path: "lock/to/path",
+		Owner: entity.User{
+			Name: "testUser",
+		},
+		LockedAt: time.Now().Unix(),
+	}
+	if err := testLockRepo.Add(testRepo, lock); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -22,7 +22,8 @@ type app struct {
 func newApp(
 	conf serverConfig,
 	batchController adapter.BatchController,
-	transferController adapter.TransferController) *app {
+	transferController adapter.TransferController,
+	lockController adapter.LockController) *app {
 
 	a := &app{
 		config: conf,
@@ -41,8 +42,14 @@ func newApp(
 		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { transferController.Upload(newContext(w, r)) })
 
 	// Lock
-	//	r.Methods("GET").Path("/{user}/{repo}/locks").MatcherFunc(MetaMatcher).
-	//		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { lockController.Locks(newContext(w, r)) })
+	r.Methods("GET").Path("/{user}/{repo}/locks").MatcherFunc(MetaMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { lockController.List(newContext(w, r)) })
+	r.Methods("POST").Path("/{user}/{repo}/locks/verify").MatcherFunc(MetaMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { lockController.Verify(newContext(w, r)) })
+	r.Methods("POST").Path("/{user}/{repo}/locks").MatcherFunc(MetaMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { lockController.Lock(newContext(w, r)) })
+	r.Methods("POST").Path("/{user}/{repo}/locks/{id}/unlock").MatcherFunc(MetaMatcher).
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) { lockController.Unlock(newContext(w, r)) })
 
 	a.router = r
 
