@@ -144,10 +144,10 @@ func seedMetaDataRepository() error {
 func seedLockRepository() error {
 
 	lock := entity.Lock{
-		ID:   "0000",
-		Path: "lock/to/path",
+		ID:   testLockId,
+		Path: testLockPath,
 		Owner: entity.User{
-			Name: "testUser",
+			Name: testUser1,
 		},
 		LockedAt: time.Now().Unix(),
 	}

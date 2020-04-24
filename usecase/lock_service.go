@@ -94,7 +94,12 @@ func (s *lockService) Unlock(req *UnlockRequest) (*LockResult, error) {
 
 func (s *lockService) List(req *LockListRequest) (*LockListResult, error) {
 
-	locks, next, err := s.LockRepository.FilteredFetch(req.Repo, req.Path, req.Cursor, strconv.Itoa(req.Limit))
+	limit := ""
+	if req.Limit > 0 {
+		limit = strconv.Itoa(req.Limit)
+	}
+
+	locks, next, err := s.LockRepository.FilteredFetch(req.Repo, req.Path, req.Cursor, limit)
 	if err != nil {
 		return nil, err
 	}

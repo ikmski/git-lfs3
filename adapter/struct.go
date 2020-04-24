@@ -45,8 +45,38 @@ type ResponseObject struct {
 	Error   *ObjectError     `json:"error,omitempty"`
 }
 
+type LockRequest struct {
+	Path string `json:"path"`
+}
+
+type LockResponse struct {
+	Lock    *Lock  `json:"lock"`
+	Message string `json:"message,omitempty"`
+}
+
+type UnlockRequest struct {
+	Force bool `json:"force"`
+}
+
+type UnlockResponse struct {
+	Lock    *Lock  `json:"lock"`
+	Message string `json:"message,omitempty"`
+}
+
 type LockListResponse struct {
 	Locks      []Lock `json:"locks"`
+	NextCursor string `json:"next_cursor,omitempty"`
+	Message    string `json:"message,omitempty"`
+}
+
+type LockVerifyRequest struct {
+	Cursor string `json:"cursor,omitempty"`
+	Limit  int    `json:"limit,omitempty"`
+}
+
+type LockVerifyResponse struct {
+	Ours       []Lock `json:"ours"`
+	Theirs     []Lock `json:"theirs"`
 	NextCursor string `json:"next_cursor,omitempty"`
 	Message    string `json:"message,omitempty"`
 }
