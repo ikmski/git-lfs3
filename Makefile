@@ -1,5 +1,7 @@
 # meta
 NAME := git-lfs3
+REPO := github.com/ikmski/git-lfs3
+
 VERSION := 0.1.0
 REVISION := $(shell git rev-parse --short HEAD)
 
@@ -12,19 +14,21 @@ LDFLAGS := -X 'main.version=$(VERSION)' -X 'main.revision=$(REVISION)'
 ## all
 all: build
 
-.PHONY: setup
-## setup
-setup:
+.PHONY: init
+## initialize
+init:
+	go mod init $(REPO)
 	go get -u github.com/Songmu/make2help/cmd/make2help
 
-.PHONY: install-deps
-## install dependencies
-install-deps: setup
+.PHONY: download-deps
+## download dependencies
+download-deps:
 	go mod download
 
 .PHONY: update-deps
 ## update dependencies
-update-deps: setup
+update-deps:
+	go get -u
 	go mod tidy
 
 .PHONY: test
